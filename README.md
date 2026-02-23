@@ -2,9 +2,9 @@
 
 This Python script provides a simple graphical user interface (GUI) for calculating Pokémon fusions in the game PokeRogue.
 
-![PokeRogue Fusion Calculator](https://i.ibb.co/FJ92R6z/Screenshot-2024-07-10-144421.png)
+![PokeRogue Fusion Calculator](https://i.postimg.cc/26nW3Dz5/Screenshot-2026-02-23-112531.jpg) 
 
-![PokeRogue Fusion Calculator](https://i.ibb.co/VvPVdJV/Screenshot-2024-07-10-144438.png)
+![PokeRogue Fusion Calculator](https://i.postimg.cc/fbGXwLhy/Screenshot-2026-02-23-112549.jpg)
 
 ## Features
 
