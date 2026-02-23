@@ -1,1 +1,191 @@
+name: Build pokemon_data.csv from SearchDex data (full replacement)
 
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 9 * * *"   # Daily 09:00 UTC; adjust as needed
+
+permissions:
+  contents: write
+
+jobs:
+  build-csv:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Fetch SearchDex data files (PokeRogue-Dex)
+        id: fetch
+        run: |
+          set -euxo pipefail
+          mkdir -p website/lang
+
+          # Grab the latest committed data files from the PokeRogue-Dex repo
+          # (This repo publishes SearchDex data generated from PokéRogue’s game source)
+          # Ref: https://github.com/Sandstormer/PokeRogue-Dex
+          curl -fL -o website/pokedex_data.js \
+            https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
+
+          curl -fL -o website/filter_data.js \
+            https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/filter_data.js
+
+          curl -fL -o website/lang/en.js \
+            https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/lang/en.js
+
+          # Record a version from the Dex repo's latest commit on main
+          # (We can stamp this into data_version.txt after conversion)
+          DEX_SHA=$(git ls-remote https://github.com/Sandstormer/PokeRogue-Dex.git refs/heads/main | awk '{print $1}')
+          echo "dex_sha=${DEX_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Convert JS -> CSV (inline Python)
+        run: |
+          python - << 'PY'
+          import re, json, csv, sys, pathlib
+
+          pokedex_fp = pathlib.Path("website/pokedex_data.js")
+          filter_fp  = pathlib.Path("website/filter_data.js")
+          lang_fp    = pathlib.Path("website/lang/en.js")
+          out_fp     = pathlib.Path("pokemon_data.csv")
+
+          def strip_export(text: str) -> str:
+              t = re.sub(r'\\bexport\\s+(default\\s+)?', '', text).strip()
+              return re.sub(r';\\s*$', '', t)
+
+          def rhs_literal(text: str) -> str:
+              m = re.search(r'=\\s*', text)
+              if not m: raise RuntimeError("No '=' assignment in JS")
+              return text[m.end():].strip()
+
+          def load_js_literal(fp: pathlib.Path):
+              txt = fp.read_text(encoding='utf-8')
+              rhs = strip_export(rhs_literal(txt))
+              rhs = re.sub(r'/\\*.*?\\*/', '', rhs, flags=re.S)
+              rhs = re.sub(r'//.*?(?=\\n|$)', '', rhs)
+              return json.loads(rhs)
+
+          def parse_lang_arrays(fp: pathlib.Path):
+              txt = fp.read_text(encoding='utf-8')
+              txt = strip_export(txt)
+              out = {}
+              for name in ("speciesNames", "fidToName"):
+                  m = re.search(rf'{name}\\s*=\\s*(\\[[\\s\\S]*?\\])\\s*;', txt)
+                  if m:
+                      body = m.group(1).replace("'", '"')
+                      out[name] = json.loads(body)
+              return out
+
+          def parse_fid_threshold(fp: pathlib.Path):
+              txt = fp.read_text(encoding='utf-8')
+              m = re.search(r'fidThreshold\\s*=\\s*\\[(.*?)\\]', txt, flags=re.S)
+              if not m: return None
+              nums = re.findall(r'-?\\d+', m.group(1))
+              return [int(n) for n in nums]
+
+          pokedex = load_js_literal(pokedex_fp)
+          lang    = parse_lang_arrays(lang_fp)
+          fids    = parse_fid_threshold(filter_fp)
+
+          species_map = {}
+          if isinstance(lang.get('speciesNames'), list):
+              for i, nm in enumerate(lang['speciesNames'], start=1):
+                  if isinstance(nm, str) and nm:
+                      species_map[i] = nm
+
+          ability_upper = None
+          if isinstance(fids, list) and len(fids) > 1:
+              ability_upper = int(fids[1])
+
+          ftn = lang.get('fidToName') or []
+          type_map, ab_map = {}, {}
+          if isinstance(ftn, list) and len(ftn) >= 18:
+              for i in range(18):
+                  if isinstance(ftn[i], str) and ftn[i]:
+                      type_map[i] = ftn[i]
+              end = min(ability_upper, len(ftn)) if ability_upper else len(ftn)
+              for i in range(18, end):
+                  if isinstance(ftn[i], str) and ftn[i]:
+                      ab_map[i] = ftn[i]
+
+          families = {}
+          for idx, rec in enumerate(pokedex, start=1):
+              if not isinstance(rec, dict): continue
+              name = species_map.get(idx, f"Species #{idx}")
+              fa, fs = rec.get('fa', None), rec.get('fs', None)
+              if isinstance(fa, int):
+                  families.setdefault(fa, []).append((fs if isinstance(fs, int) else 0, idx, name))
+
+          rows = []
+          for idx, rec in enumerate(pokedex, start=1):
+              if not isinstance(rec, dict): continue
+              name = species_map.get(idx, f"Species #{idx}")
+
+              def gs(k):
+                  try: return int(rec.get(k, 0))
+                  except Exception: return 0
+
+              hp, atk, dfn, spa, spd, spe = (gs('hp'), gs('atk'), gs('def'), gs('spa'), gs('spd'), gs('spe'))
+              bst = int(rec.get('bst', (hp+atk+dfn+spa+spd+spe)))
+              t1, t2 = rec.get('t1'), rec.get('t2')
+              type1 = type_map.get(int(t1), '') if t1 is not None else ''
+              type2 = type_map.get(int(t2), '') if t2 is not None else ''
+              if type2 == type1: type2 = ''
+
+              ab_codes = []
+              for k in ('a1','a2','a3','ha'):
+                  if k in rec and rec[k] is not None:
+                      try: ab_codes.append(int(rec[k]))
+                      except Exception: pass
+              abilities = ', '.join([ab_map.get(c, str(c)) for c in ab_codes])
+
+              passive_code = rec.get('pa', None)
+              passive = ab_map.get(int(passive_code), '') if passive_code is not None else ''
+
+              evo_line = ''
+              fa = rec.get('fa', None)
+              if isinstance(fa, int) and fa in families:
+                  fam = sorted(families[fa], key=lambda x: (x[0], x[1]))
+                  names, seen = [], set()
+                  for _, _, n in fam:
+                      if n not in seen:
+                          names.append(n); seen.add(n)
+                  evo_line = ', '.join(names)
+
+              rows.append({
+                  'name': name,
+                  'id': int(rec.get('id', rec.get('dex', 0)) or 0),
+                  'hp': hp, 'attack': atk, 'defense': dfn, 'spAttack': spa, 'spDefense': spd, 'speed': spe,
+                  'bst': bst, 'type1': type1, 'type2': type2,
+                  'abilities': abilities, 'passive': passive, 'evolution line': evo_line
+              })
+
+          cols = ['name','id','hp','attack','defense','spAttack','spDefense','speed','bst',
+                  'type1','type2','abilities','passive','evolution line']
+          with out_fp.open('w', newline='', encoding='utf-8') as f:
+              w = csv.DictWriter(f, fieldnames=cols)
+              w.writeheader()
+              for r in rows:
+                  w.writerow({k: r.get(k, '') for k in cols})
+          print("Wrote", out_fp)
+          PY
+
+      - name: Write data_version.txt (Dex commit)
+        run: |
+          echo "PokeRogue-Dex ${{ steps.fetch.outputs.dex_sha::0:7 }}" > data_version.txt
+
+      - name: Commit updated CSV + version (if changed)
+        run: |
+          set -euxo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pokemon_data.csv data_version.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): auto-update from PokeRogue-Dex ${{ steps.fetch.outputs.dex_sha::0:7 }}"
+            git push
+          else
+            echo "No changes."
