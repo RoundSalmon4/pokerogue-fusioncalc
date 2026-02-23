@@ -21,20 +21,23 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install json5
+
       - name: Fetch SearchDex data files (PokeRogue-Dex)
         id: fetch
         run: |
           set -euxo pipefail
           mkdir -p website/lang
 
-          # Download the SearchDex data files that the site uses
+          # Download the SearchDex data files used by the site
           # (These are generated from the PokéRogue game source)
           curl -fL -o website/pokedex_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
-
           curl -fL -o website/filter_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/filter_data.js
-
           curl -fL -o website/lang/en.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/lang/en.js
 
@@ -43,42 +46,46 @@ jobs:
           echo "dex_sha=$DEX_SHA" >> "$GITHUB_OUTPUT"
           echo "dex_short=${DEX_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
-      - name: Convert JS -> CSV (inline Python)
+      - name: Convert JS -> CSV (via JSON5)
         run: |
           python - << 'PY'
-          import re, json, csv, pathlib
+          import re, csv, pathlib, json5
 
           pokedex_fp = pathlib.Path("website/pokedex_data.js")
           filter_fp  = pathlib.Path("website/filter_data.js")
           lang_fp    = pathlib.Path("website/lang/en.js")
           out_fp     = pathlib.Path("pokemon_data.csv")
 
-          def strip_export(text: str) -> str:
+          def strip_export_and_rhs(text: str) -> str:
+              """
+              Remove 'export' / 'export default' / 'const X =' prefixes and return
+              the literal on the RHS (array/object). Also strip trailing semicolon.
+              """
               t = re.sub(r'\bexport\s+(default\s+)?', '', text).strip()
-              return re.sub(r';\s*$', '', t)
+              m = re.search(r'=\s*', t)
+              if m:
+                  t = t[m.end():].strip()
+              # remove any trailing semicolon outside braces/brackets
+              t = re.sub(r';\s*$', '', t)
+              return t
 
-          def rhs_literal(text: str) -> str:
-              m = re.search(r'=\s*', text)
-              if not m:
-                  raise RuntimeError("No '=' assignment in JS")
-              return text[m.end():].strip()
-
-          def load_js_literal(fp: pathlib.Path):
+          def load_js5_literal(fp: pathlib.Path):
               txt = fp.read_text(encoding='utf-8')
-              rhs = strip_export(rhs_literal(txt))
-              rhs = re.sub(r'/\*.*?\*/', '', rhs, flags=re.S)
-              rhs = re.sub(r'//.*?(?=\n|$)', '', rhs)
-              return json.loads(rhs)
+              lit = strip_export_and_rhs(txt)
+              return json5.loads(lit)
 
           def parse_lang_arrays(fp: pathlib.Path):
+              """
+              lang/en.js is multiple assignments (not one big object).
+              Extract the two arrays we need using regex + JSON5.
+              """
               txt = fp.read_text(encoding='utf-8')
-              txt = strip_export(txt)
+              txt = re.sub(r'\bexport\s+(default\s+)?', '', txt).strip()
               out = {}
               for name in ("speciesNames", "fidToName"):
                   m = re.search(rf'{name}\s*=\s*(\[[\s\S]*?\])\s*;', txt)
                   if m:
-                      body = m.group(1).replace("'", '"')
-                      out[name] = json.loads(body)
+                      out[name] = json5.loads(m.group(1))
               return out
 
           def parse_fid_threshold(fp: pathlib.Path):
@@ -89,7 +96,7 @@ jobs:
               nums = re.findall(r'-?\d+', m.group(1))
               return [int(n) for n in nums]
 
-          pokedex = load_js_literal(pokedex_fp)
+          pokedex = load_js5_literal(pokedex_fp)
           lang    = parse_lang_arrays(lang_fp)
           fids    = parse_fid_threshold(filter_fp)
 
@@ -100,6 +107,7 @@ jobs:
                   if isinstance(nm, str) and nm:
                       species_map[i] = nm
 
+          # Map FID ranges: 0..17 types, 18.. abilities (upper bound via fidThreshold[1])
           ability_upper = None
           if isinstance(fids, list) and len(fids) > 1:
               ability_upper = int(fids[1])
