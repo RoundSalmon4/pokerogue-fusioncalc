@@ -8,16 +8,16 @@ This Python script provides a simple graphical user interface (GUI) for calculat
 
 ## Features
 
-* Select two Pokémon for fusion from filterable menus
-* Calculate and display the resulting fusion's stats
-* Display type effectiveness for the fused Pokémon
-* Provide links to additional PokeRogue resources
-* Toggle for Dark Mode theme
+* Select two Pokémon for fusion from filterable menus.
+* Calculate and display the resulting fusion's stats.
+* Display type effectiveness for the fused Pokémon.
+* Provide links to additional PokeRogue resources.
+* Toggle for Dark Mode theme.
 
 ### How to use
 
 * Download `FusionCalc.pyw`, and `pokemon_data.csv` into the same directory.
-* Verify you meet the requirements (the scripts should warn of missing libraries)
+* Verify you meet the requirements.
 * run `FusionCalc.pyw`
 
 ### Requirements
@@ -32,11 +32,11 @@ This Python script provides a simple graphical user interface (GUI) for calculat
 
 ### Contributing
 
-Contributions to improve the calculator or add new features are welcome. Please submit pull requests or open issues on the project repository
+Contributions to improve the calculator or add new features are welcome. Please submit pull requests or open issues on the project repository.
 
 ### License
 
-This project is licensed under the AGPL-3.0 license. See the `LICENSE` file for details
+This project is licensed under the AGPL-3.0 license. See the `LICENSE` file for details.
 
 ### Acknowledgements
 
