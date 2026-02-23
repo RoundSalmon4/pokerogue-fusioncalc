@@ -27,15 +27,18 @@ jobs:
           set -euxo pipefail
           mkdir -p website/lang
 
-          # Fetch data produced for the SearchDex site
+          # Download the SearchDex data files that the site uses
+          # (These are generated from the PokéRogue game source)
           curl -fL -o website/pokedex_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
+
           curl -fL -o website/filter_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/filter_data.js
+
           curl -fL -o website/lang/en.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/lang/en.js
 
-          # Record the current commit on PokeRogue-Dex/main as our data version
+          # Record the source version from Dex main
           DEX_SHA="$(git ls-remote https://github.com/Sandstormer/PokeRogue-Dex.git refs/heads/main | awk '{print $1}')"
           echo "dex_sha=$DEX_SHA" >> "$GITHUB_OUTPUT"
           echo "dex_short=${DEX_SHA:0:7}" >> "$GITHUB_OUTPUT"
@@ -51,19 +54,16 @@ jobs:
           out_fp     = pathlib.Path("pokemon_data.csv")
 
           def strip_export(text: str) -> str:
-              import re
               t = re.sub(r'\bexport\s+(default\s+)?', '', text).strip()
               return re.sub(r';\s*$', '', t)
 
           def rhs_literal(text: str) -> str:
-              import re
               m = re.search(r'=\s*', text)
               if not m:
                   raise RuntimeError("No '=' assignment in JS")
               return text[m.end():].strip()
 
           def load_js_literal(fp: pathlib.Path):
-              import re, json
               txt = fp.read_text(encoding='utf-8')
               rhs = strip_export(rhs_literal(txt))
               rhs = re.sub(r'/\*.*?\*/', '', rhs, flags=re.S)
@@ -71,7 +71,6 @@ jobs:
               return json.loads(rhs)
 
           def parse_lang_arrays(fp: pathlib.Path):
-              import re, json
               txt = fp.read_text(encoding='utf-8')
               txt = strip_export(txt)
               out = {}
@@ -83,7 +82,6 @@ jobs:
               return out
 
           def parse_fid_threshold(fp: pathlib.Path):
-              import re
               txt = fp.read_text(encoding='utf-8')
               m = re.search(r'fidThreshold\s*=\s*\[(.*?)\]', txt, flags=re.S)
               if not m:
@@ -95,6 +93,7 @@ jobs:
           lang    = parse_lang_arrays(lang_fp)
           fids    = parse_fid_threshold(filter_fp)
 
+          # Build mapping tables from lang
           species_map = {}
           if isinstance(lang.get('speciesNames'), list):
               for i, nm in enumerate(lang['speciesNames'], start=1):
@@ -108,14 +107,17 @@ jobs:
           ftn = lang.get('fidToName') or []
           type_map, ab_map = {}, {}
           if isinstance(ftn, list) and len(ftn) >= 18:
+              # Types (0..17)
               for i in range(18):
-                  if isinstance(ftn[i], str) and ft n[i]:
-                      type_map[i] = ft n[i]
+                  if isinstance(ftn[i], str) and ftn[i]:
+                      type_map[i] = ftn[i]
+              # Abilities (>=18)
               end = min(ability_upper, len(ftn)) if ability_upper else len(ftn)
               for i in range(18, end):
-                  if isinstance(ftn[i], str) and ft n[i]:
-                      ab_map[i] = ft n[i]
+                  if isinstance(ftn[i], str) and ftn[i]:
+                      ab_map[i] = ftn[i]
 
+          # Build families for evolution line output
           families = {}
           for idx, rec in enumerate(pokedex, start=1):
               if not isinstance(rec, dict):
