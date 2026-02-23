@@ -27,7 +27,7 @@ This Python script provides a simple graphical user interface (GUI) for calculat
 
 ### How to update info in FusionCalc with databasemaker.py
 
-* Replace old `pokemon_data.csv` with the new one from repository. `pokemon_data.csv` is rebuilt daily.
+* Replace old `pokemon_data.csv` with a new one from this repository. `pokemon_data.csv` is rebuilt daily.
 * Place this in the same directory as `FusionCalc.pyw`
 
 ### Contributing
