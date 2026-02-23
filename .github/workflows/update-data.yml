@@ -22,8 +22,8 @@ jobs:
           set -euxo pipefail
           mkdir -p website/lang
 
-          # Download the SearchDex data files used by the site.
-          # (These are generated from the PokéRogue game source.)
+          # Download the SearchDex data files used by the site
+          # (These are generated from the PokéRogue game source)
           curl -fL -o website/pokedex_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
           curl -fL -o website/filter_data.js \
@@ -36,7 +36,7 @@ jobs:
           echo "dex_sha=$DEX_SHA" >> "$GITHUB_OUTPUT"
           echo "dex_short=${DEX_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
-      - name: Convert JS -> CSV (Node VM sandbox)
+      - name: Convert JS -> CSV (Node VM sandbox; shared context)
         shell: bash
         run: |
           node - <<'NODE'
@@ -48,42 +48,57 @@ jobs:
           const LA = 'website/lang/en.js';
           const OUT = 'pokemon_data.csv';
 
+          function stripExport(txt) {
+            return txt.replace(/\bexport\s+(default\s+)?/g, '').trim();
+          }
+
           function loadLiteralFromFile(path) {
             // Read file, drop 'export' or 'export default' and optional LHS, keep RHS literal.
             let txt = fs.readFileSync(path, 'utf8');
-            txt = txt.replace(/\bexport\s+(default\s+)?/g, '').trim();
+            txt = stripExport(txt);
             const m = txt.match(/=\s*/);
-            if (m) txt = txt.slice(m.index + m[0].length).trim();
+            if (m) txt = txt.slice(m.index + m[0].length).trim(); // keep RHS only when present
             txt = txt.replace(/;\s*$/, ''); // strip trailing semicolon
             // Evaluate JS literal safely in a new context and return the value
-            return vm.runInNewContext('(' + txt + ')', Object.create(null), { timeout: 2000 });
+            return vm.runInNewContext('(' + txt + ')', Object.create(null), { timeout: 3000 });
           }
 
-          function evalGlobals(path, names) {
-            // Evaluate entire script in an empty context (no Node globals)
-            const code = fs.readFileSync(path, 'utf8').replace(/\bexport\s+(default\s+)?/g, '').trim();
-            const ctx = Object.create(null);
-            vm.createContext(ctx);
-            vm.runInContext(code, ctx, { timeout: 3000 });
-            const out = {};
-            for (const n of names) out[n] = ctx[n];
-            return out;
+          // ---- Shared context so scripts can "see" each other (e.g., fidThreshold) ----
+          const ctx = { window: {} };
+          vm.createContext(ctx);
+
+          // 1) Evaluate filter_data.js first (defines fidThreshold, etc.)
+          const filterCode = stripExport(fs.readFileSync(FI, 'utf8'));
+          vm.runInContext(filterCode, ctx, { timeout: 5000 });
+          // Make sure window also has fidThreshold if the lang file expects it via window.fidThreshold
+          if (Array.isArray(ctx.fidThreshold)) ctx.window.fidThreshold = ctx.fidThreshold;
+
+          // 2) Evaluate lang/en.js in the SAME context (refs fidThreshold in template strings)
+          const langCode = stripExport(fs.readFileSync(LA, 'utf8'));
+          vm.runInContext(langCode, ctx, { timeout: 5000 });
+
+          const speciesNames = Array.isArray(ctx.speciesNames) ? ctx.speciesNames
+                                  : Array.isArray(ctx.window.speciesNames) ? ctx.window.speciesNames : [];
+          const fidToName    = Array.isArray(ctx.fidToName) ? ctx.fidToName
+                                  : Array.isArray(ctx.window.fidToName) ? ctx.window.fidToName : [];
+          const fidThreshold = Array.isArray(ctx.fidThreshold) ? ctx.fidThreshold
+                                  : Array.isArray(ctx.window.fidThreshold) ? ctx.window.fidThreshold : [];
+
+          if (!Array.isArray(speciesNames) || !Array.isArray(fidToName)) {
+            throw new Error('Failed to extract speciesNames/fidToName from lang/en.js');
           }
 
-          // Load data
-          const pokedex = loadLiteralFromFile(PO);            // array of species/form dicts
-          const lang    = evalGlobals(LA, ['speciesNames', 'fidToName']); // arrays
-          const fids    = evalGlobals(FI, ['fidThreshold']).fidThreshold; // [typesUpper, abilitiesUpper, ...]
+          // 3) Load pokedex_data.js as a literal
+          const pokedex = loadLiteralFromFile(PO);
 
-          // Build mapping tables from lang
-          const speciesNames = Array.isArray(lang.speciesNames) ? lang.speciesNames : [];
-          const fidToName    = Array.isArray(lang.fidToName) ? lang.fidToName : [];
-          const abilityUpper = Array.isArray(fids) && fids.length > 1 ? Number(fids[1]) : null;
+          // ---- Build maps ----
+          const abilityUpper = Array.isArray(fidThreshold) && fidThreshold.length > 1
+            ? Number(fidThreshold[1]) : null;
 
           const speciesMap = {};
           for (let i = 0; i < speciesNames.length; i++) {
             const nm = speciesNames[i];
-            if (typeof nm === 'string' && nm) speciesMap[i + 1] = nm; // JS arrays 0-based; our index starts at 1
+            if (typeof nm === 'string' && nm) speciesMap[i + 1] = nm; // index base 1
           }
 
           const typeMap = {};
@@ -93,14 +108,16 @@ jobs:
               const v = fidToName[i];
               if (typeof v === 'string' && v) typeMap[i] = v;
             }
-            const end = abilityUpper && Number.isFinite(abilityUpper) ? Math.min(abilityUpper, fidToName.length) : fidToName.length;
+            const end = abilityUpper && Number.isFinite(abilityUpper)
+              ? Math.min(abilityUpper, fidToName.length)
+              : fidToName.length;
             for (let i = 18; i < end; i++) {
               const v = fidToName[i];
               if (typeof v === 'string' && v) abMap[i] = v;
             }
           }
 
-          // Build families for evolution line output
+          // ---- Families for evolution line ----
           const families = new Map(); // fa -> [ [fsSort, idx, name], ... ]
           pokedex.forEach((rec, idx0) => {
             const idx = idx0 + 1;
@@ -115,26 +132,22 @@ jobs:
             }
           });
 
-          // Helpers
-          function gs(rec, k) {
-            const v = rec?.[k];
-            const n = Number(v);
-            return Number.isFinite(n) ? n : 0;
-          }
+          // ---- Helpers ----
+          function num(v, d=0) { const n = Number(v); return Number.isFinite(n) ? n : d; }
 
-          // Generate CSV rows
+          // ---- Build rows ----
           const rows = [];
           pokedex.forEach((rec, idx0) => {
             const idx = idx0 + 1;
             if (!rec || typeof rec !== 'object') return;
             const name = speciesMap[idx] || `Species #${idx}`;
 
-            const hp  = gs(rec, 'hp');
-            const atk = gs(rec, 'atk');
-            const dfn = gs(rec, 'def');
-            const spa = gs(rec, 'spa');
-            const spd = gs(rec, 'spd');
-            const spe = gs(rec, 'spe');
+            const hp  = num(rec.hp);
+            const atk = num(rec.atk);
+            const dfn = num(rec.def);
+            const spa = num(rec.spa);
+            const spd = num(rec.spd);
+            const spe = num(rec.spe);
             const bst = Number.isFinite(Number(rec?.bst)) ? Number(rec.bst) : (hp + atk + dfn + spa + spd + spe);
 
             const t1  = rec.t1; const t2 = rec.t2;
@@ -166,7 +179,6 @@ jobs:
               evoLine = names.join(', ');
             }
 
-            // id: prefer rec.id else rec.dex else 0
             let idVal = 0;
             if (Number.isFinite(Number(rec?.id))) idVal = Number(rec.id);
             else if (Number.isFinite(Number(rec?.dex))) idVal = Number(rec.dex);
@@ -180,7 +192,7 @@ jobs:
             });
           });
 
-          // Write CSV
+          // ---- Write CSV ----
           const cols = ['name','id','hp','attack','defense','spAttack','spDefense','speed','bst',
                         'type1','type2','abilities','passive','evolution line'];
 
@@ -190,9 +202,7 @@ jobs:
             return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v;
           }
           const lines = [cols.join(',')];
-          for (const r of rows) {
-            lines.push(cols.map(c => esc(r[c])).join(','));
-          }
+          for (const r of rows) lines.push(cols.map(c => esc(r[c])).join(','));
           fs.writeFileSync(OUT, lines.join('\n'), 'utf8');
           console.log('Wrote', OUT, 'rows=', rows.length);
           NODE
