@@ -16,19 +16,19 @@ This Python script provides a simple graphical user interface (GUI) for calculat
 
 ### How to use
 
-* Download `FusionCalc.pyw`, and `pokemon_data.csv` into the same directory.
+* Download `FusionCalc.py`, and `pokemon_data.csv` into the same directory.
 * Verify you meet the requirements.
-* run `FusionCalc.pyw`
+* run `FusionCalc.py`
 
 ### Requirements
 
 * Python 3.x
 * tkinter library
 
-### How to update info in FusionCalc with databasemaker.py
+### How to update info in FusionCalc
 
 * Replace old `pokemon_data.csv` with a new one from this repository. `pokemon_data.csv` is rebuilt daily.
-* Place this in the same directory as `FusionCalc.pyw`
+* Place this in the same directory as `FusionCalc.py`
 
 ### Contributing
 
