@@ -22,8 +22,7 @@ jobs:
           set -euxo pipefail
           mkdir -p website/lang
 
-          # Download the SearchDex data files used by the site
-          # (These are generated from the PokéRogue game source)
+          # Download SearchDex data files generated from PokéRogue game source
           curl -fL -o website/pokedex_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
           curl -fL -o website/filter_data.js \
@@ -31,12 +30,12 @@ jobs:
           curl -fL -o website/lang/en.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/lang/en.js
 
-          # Record the source version from Dex main
+          # Record the source version (Dex main SHA)
           DEX_SHA="$(git ls-remote https://github.com/Sandstormer/PokeRogue-Dex.git refs/heads/main | awk '{print $1}')"
           echo "dex_sha=$DEX_SHA" >> "$GITHUB_OUTPUT"
           echo "dex_short=${DEX_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
-      - name: Convert JS -> CSV (Node VM sandbox; shared context)
+      - name: Convert JS -> CSV (Node VM sandbox; shared context with stubs)
         shell: bash
         run: |
           node - <<'NODE'
@@ -63,20 +62,25 @@ jobs:
             return vm.runInNewContext('(' + txt + ')', Object.create(null), { timeout: 3000 });
           }
 
-          // ---- Shared context so scripts can "see" each other (e.g., fidThreshold) ----
-          const ctx = { window: {} };
+          // ---- Shared context so scripts can "see" each other (e.g., fidThreshold, col) ----
+          // Minimal "window" plus a permissive "col" stub for help-text templates
+          const colProxy = new Proxy({}, { get: () => '#cccccc' });
+          const ctx = { window: {}, col: colProxy };
+          ctx.window.col = ctx.col;   // some builds reference window.col
           vm.createContext(ctx);
 
           // 1) Evaluate filter_data.js first (defines fidThreshold, etc.)
           const filterCode = stripExport(fs.readFileSync(FI, 'utf8'));
-          vm.runInContext(filterCode, ctx, { timeout: 5000 });
-          // Make sure window also has fidThreshold if the lang file expects it via window.fidThreshold
+          vm.runInContext(filterCode, ctx, { timeout: 7000 });
+
+          // Mirror fidThreshold to window if needed by lang templates
           if (Array.isArray(ctx.fidThreshold)) ctx.window.fidThreshold = ctx.fidThreshold;
 
-          // 2) Evaluate lang/en.js in the SAME context (refs fidThreshold in template strings)
+          // 2) Evaluate lang/en.js in the SAME context (uses fidThreshold and col)
           const langCode = stripExport(fs.readFileSync(LA, 'utf8'));
-          vm.runInContext(langCode, ctx, { timeout: 5000 });
+          vm.runInContext(langCode, ctx, { timeout: 7000 });
 
+          // Extract arrays from context (some builds export on window, others as globals)
           const speciesNames = Array.isArray(ctx.speciesNames) ? ctx.speciesNames
                                   : Array.isArray(ctx.window.speciesNames) ? ctx.window.speciesNames : [];
           const fidToName    = Array.isArray(ctx.fidToName) ? ctx.fidToName
@@ -88,7 +92,7 @@ jobs:
             throw new Error('Failed to extract speciesNames/fidToName from lang/en.js');
           }
 
-          // 3) Load pokedex_data.js as a literal
+          // 3) Load pokedex_data.js as a pure literal
           const pokedex = loadLiteralFromFile(PO);
 
           // ---- Build maps ----
