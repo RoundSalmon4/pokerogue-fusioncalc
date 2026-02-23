@@ -22,7 +22,7 @@ jobs:
           set -euxo pipefail
           mkdir -p website/lang
 
-          # Download SearchDex data files generated from PokéRogue game source
+          # Download SearchDex data (generated from the PokéRogue game source)
           curl -fL -o website/pokedex_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
           curl -fL -o website/filter_data.js \
@@ -226,3 +226,4 @@ jobs:
             git push
           else
             echo "No changes."
+          fi
