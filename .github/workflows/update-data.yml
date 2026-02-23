@@ -16,24 +16,14 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install json5
-
       - name: Fetch SearchDex data files (PokeRogue-Dex)
         id: fetch
         run: |
           set -euxo pipefail
           mkdir -p website/lang
 
-          # Download the SearchDex data files used by the site
-          # (These are generated from the PokéRogue game source)
+          # Download the SearchDex data files used by the site.
+          # (These are generated from the PokéRogue game source.)
           curl -fL -o website/pokedex_data.js \
             https://raw.githubusercontent.com/Sandstormer/PokeRogue-Dex/main/pokedex_data.js
           curl -fL -o website/filter_data.js \
@@ -46,154 +36,166 @@ jobs:
           echo "dex_sha=$DEX_SHA" >> "$GITHUB_OUTPUT"
           echo "dex_short=${DEX_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
-      - name: Convert JS -> CSV (via JSON5)
+      - name: Convert JS -> CSV (Node VM sandbox)
+        shell: bash
         run: |
-          python - << 'PY'
-          import re, csv, pathlib, json5
+          node - <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
 
-          pokedex_fp = pathlib.Path("website/pokedex_data.js")
-          filter_fp  = pathlib.Path("website/filter_data.js")
-          lang_fp    = pathlib.Path("website/lang/en.js")
-          out_fp     = pathlib.Path("pokemon_data.csv")
+          const PO = 'website/pokedex_data.js';
+          const FI = 'website/filter_data.js';
+          const LA = 'website/lang/en.js';
+          const OUT = 'pokemon_data.csv';
 
-          def strip_export_and_rhs(text: str) -> str:
-              """
-              Remove 'export' / 'export default' / 'const X =' prefixes and return
-              the literal on the RHS (array/object). Also strip trailing semicolon.
-              """
-              t = re.sub(r'\bexport\s+(default\s+)?', '', text).strip()
-              m = re.search(r'=\s*', t)
-              if m:
-                  t = t[m.end():].strip()
-              # remove any trailing semicolon outside braces/brackets
-              t = re.sub(r';\s*$', '', t)
-              return t
+          function loadLiteralFromFile(path) {
+            // Read file, drop 'export' or 'export default' and optional LHS, keep RHS literal.
+            let txt = fs.readFileSync(path, 'utf8');
+            txt = txt.replace(/\bexport\s+(default\s+)?/g, '').trim();
+            const m = txt.match(/=\s*/);
+            if (m) txt = txt.slice(m.index + m[0].length).trim();
+            txt = txt.replace(/;\s*$/, ''); // strip trailing semicolon
+            // Evaluate JS literal safely in a new context and return the value
+            return vm.runInNewContext('(' + txt + ')', Object.create(null), { timeout: 2000 });
+          }
 
-          def load_js5_literal(fp: pathlib.Path):
-              txt = fp.read_text(encoding='utf-8')
-              lit = strip_export_and_rhs(txt)
-              return json5.loads(lit)
+          function evalGlobals(path, names) {
+            // Evaluate entire script in an empty context (no Node globals)
+            const code = fs.readFileSync(path, 'utf8').replace(/\bexport\s+(default\s+)?/g, '').trim();
+            const ctx = Object.create(null);
+            vm.createContext(ctx);
+            vm.runInContext(code, ctx, { timeout: 3000 });
+            const out = {};
+            for (const n of names) out[n] = ctx[n];
+            return out;
+          }
 
-          def parse_lang_arrays(fp: pathlib.Path):
-              """
-              lang/en.js is multiple assignments (not one big object).
-              Extract the two arrays we need using regex + JSON5.
-              """
-              txt = fp.read_text(encoding='utf-8')
-              txt = re.sub(r'\bexport\s+(default\s+)?', '', txt).strip()
-              out = {}
-              for name in ("speciesNames", "fidToName"):
-                  m = re.search(rf'{name}\s*=\s*(\[[\s\S]*?\])\s*;', txt)
-                  if m:
-                      out[name] = json5.loads(m.group(1))
-              return out
+          // Load data
+          const pokedex = loadLiteralFromFile(PO);            // array of species/form dicts
+          const lang    = evalGlobals(LA, ['speciesNames', 'fidToName']); // arrays
+          const fids    = evalGlobals(FI, ['fidThreshold']).fidThreshold; // [typesUpper, abilitiesUpper, ...]
 
-          def parse_fid_threshold(fp: pathlib.Path):
-              txt = fp.read_text(encoding='utf-8')
-              m = re.search(r'fidThreshold\s*=\s*\[(.*?)\]', txt, flags=re.S)
-              if not m:
-                  return None
-              nums = re.findall(r'-?\d+', m.group(1))
-              return [int(n) for n in nums]
+          // Build mapping tables from lang
+          const speciesNames = Array.isArray(lang.speciesNames) ? lang.speciesNames : [];
+          const fidToName    = Array.isArray(lang.fidToName) ? lang.fidToName : [];
+          const abilityUpper = Array.isArray(fids) && fids.length > 1 ? Number(fids[1]) : null;
 
-          pokedex = load_js5_literal(pokedex_fp)
-          lang    = parse_lang_arrays(lang_fp)
-          fids    = parse_fid_threshold(filter_fp)
+          const speciesMap = {};
+          for (let i = 0; i < speciesNames.length; i++) {
+            const nm = speciesNames[i];
+            if (typeof nm === 'string' && nm) speciesMap[i + 1] = nm; // JS arrays 0-based; our index starts at 1
+          }
 
-          # Build mapping tables from lang
-          species_map = {}
-          if isinstance(lang.get('speciesNames'), list):
-              for i, nm in enumerate(lang['speciesNames'], start=1):
-                  if isinstance(nm, str) and nm:
-                      species_map[i] = nm
+          const typeMap = {};
+          const abMap   = {};
+          if (fidToName.length >= 18) {
+            for (let i = 0; i < 18; i++) {
+              const v = fidToName[i];
+              if (typeof v === 'string' && v) typeMap[i] = v;
+            }
+            const end = abilityUpper && Number.isFinite(abilityUpper) ? Math.min(abilityUpper, fidToName.length) : fidToName.length;
+            for (let i = 18; i < end; i++) {
+              const v = fidToName[i];
+              if (typeof v === 'string' && v) abMap[i] = v;
+            }
+          }
 
-          # Map FID ranges: 0..17 types, 18.. abilities (upper bound via fidThreshold[1])
-          ability_upper = None
-          if isinstance(fids, list) and len(fids) > 1:
-              ability_upper = int(fids[1])
+          // Build families for evolution line output
+          const families = new Map(); // fa -> [ [fsSort, idx, name], ... ]
+          pokedex.forEach((rec, idx0) => {
+            const idx = idx0 + 1;
+            if (!rec || typeof rec !== 'object') return;
+            const fa = rec.fa;
+            const fsVal = rec.fs;
+            const name = speciesMap[idx] || `Species #${idx}`;
+            if (Number.isInteger(fa)) {
+              const arr = families.get(fa) || [];
+              arr.push([Number.isInteger(fsVal) ? fsVal : 0, idx, name]);
+              families.set(fa, arr);
+            }
+          });
 
-          ftn = lang.get('fidToName') or []
-          type_map, ab_map = {}, {}
-          if isinstance(ftn, list) and len(ftn) >= 18:
-              # Types (0..17)
-              for i in range(18):
-                  if isinstance(ftn[i], str) and ftn[i]:
-                      type_map[i] = ftn[i]
-              # Abilities (>=18)
-              end = min(ability_upper, len(ftn)) if ability_upper else len(ftn)
-              for i in range(18, end):
-                  if isinstance(ftn[i], str) and ftn[i]:
-                      ab_map[i] = ftn[i]
+          // Helpers
+          function gs(rec, k) {
+            const v = rec?.[k];
+            const n = Number(v);
+            return Number.isFinite(n) ? n : 0;
+          }
 
-          # Build families for evolution line output
-          families = {}
-          for idx, rec in enumerate(pokedex, start=1):
-              if not isinstance(rec, dict):
-                  continue
-              name = species_map.get(idx, f"Species #{idx}")
-              fa, fs = rec.get('fa', None), rec.get('fs', None)
-              if isinstance(fa, int):
-                  families.setdefault(fa, []).append((fs if isinstance(fs, int) else 0, idx, name))
+          // Generate CSV rows
+          const rows = [];
+          pokedex.forEach((rec, idx0) => {
+            const idx = idx0 + 1;
+            if (!rec || typeof rec !== 'object') return;
+            const name = speciesMap[idx] || `Species #${idx}`;
 
-          rows = []
-          for idx, rec in enumerate(pokedex, start=1):
-              if not isinstance(rec, dict):
-                  continue
-              name = species_map.get(idx, f"Species #{idx}")
+            const hp  = gs(rec, 'hp');
+            const atk = gs(rec, 'atk');
+            const dfn = gs(rec, 'def');
+            const spa = gs(rec, 'spa');
+            const spd = gs(rec, 'spd');
+            const spe = gs(rec, 'spe');
+            const bst = Number.isFinite(Number(rec?.bst)) ? Number(rec.bst) : (hp + atk + dfn + spa + spd + spe);
 
-              def gs(k):
-                  try:
-                      return int(rec.get(k, 0))
-                  except Exception:
-                      return 0
+            const t1  = rec.t1; const t2 = rec.t2;
+            let type1 = (t1 != null && typeMap[Number(t1)]) ? typeMap[Number(t1)] : '';
+            let type2 = (t2 != null && typeMap[Number(t2)]) ? typeMap[Number(t2)] : '';
+            if (type2 === type1) type2 = '';
 
-              hp, atk, dfn, spa, spd, spe = (gs('hp'), gs('atk'), gs('def'), gs('spa'), gs('spd'), gs('spe'))
-              bst = int(rec.get('bst', (hp+atk+dfn+spa+spd+spe)))
-              t1, t2 = rec.get('t1'), rec.get('t2')
-              type1 = type_map.get(int(t1), '') if t1 is not None else ''
-              type2 = type_map.get(int(t2), '') if t2 is not None else ''
-              if type2 == type1:
-                  type2 = ''
+            const abCodes = [];
+            for (const k of ['a1','a2','a3','ha']) {
+              if (k in rec && rec[k] != null && Number.isFinite(Number(rec[k]))) {
+                abCodes.push(Number(rec[k]));
+              }
+            }
+            const abilities = abCodes.map(c => abMap[c] || String(c)).join(', ');
 
-              ab_codes = []
-              for k in ('a1','a2','a3','ha'):
-                  if k in rec and rec[k] is not None:
-                      try:
-                          ab_codes.append(int(rec[k]))
-                      except Exception:
-                          pass
-              abilities = ', '.join([ab_map.get(c, str(c)) for c in ab_codes])
+            const passiveCode = rec.pa;
+            const passive = (passiveCode != null && abMap[Number(passiveCode)]) ? abMap[Number(passiveCode)] : '';
 
-              passive_code = rec.get('pa', None)
-              passive = ab_map.get(int(passive_code), '') if passive_code is not None else ''
+            // evolution line
+            let evoLine = '';
+            const fa = rec.fa;
+            if (Number.isInteger(fa) && families.has(fa)) {
+              const fam = families.get(fa).slice().sort((a,b)=> (a[0]-b[0]) || (a[1]-b[1]));
+              const names = [];
+              const seen = new Set();
+              for (const [, , n] of fam) {
+                if (!seen.has(n)) { names.push(n); seen.add(n); }
+              }
+              evoLine = names.join(', ');
+            }
 
-              evo_line = ''
-              fa = rec.get('fa', None)
-              if isinstance(fa, int) and fa in families:
-                  fam = sorted(families[fa], key=lambda x: (x[0], x[1]))
-                  names, seen = [], set()
-                  for _, _, n in fam:
-                      if n not in seen:
-                          names.append(n); seen.add(n)
-                  evo_line = ', '.join(names)
+            // id: prefer rec.id else rec.dex else 0
+            let idVal = 0;
+            if (Number.isFinite(Number(rec?.id))) idVal = Number(rec.id);
+            else if (Number.isFinite(Number(rec?.dex))) idVal = Number(rec.dex);
 
-              rows.append({
-                  'name': name,
-                  'id': int(rec.get('id', rec.get('dex', 0)) or 0),
-                  'hp': hp, 'attack': atk, 'defense': dfn, 'spAttack': spa, 'spDefense': spd, 'speed': spe,
-                  'bst': bst, 'type1': type1, 'type2': type2,
-                  'abilities': abilities, 'passive': passive, 'evolution line': evo_line
-              })
+            rows.push({
+              name,
+              id: idVal,
+              hp, attack: atk, defense: dfn, spAttack: spa, spDefense: spd, speed: spe,
+              bst, type1, type2,
+              abilities, passive, 'evolution line': evoLine
+            });
+          });
 
-          cols = ['name','id','hp','attack','defense','spAttack','spDefense','speed','bst',
-                  'type1','type2','abilities','passive','evolution line']
-          with out_fp.open('w', newline='', encoding='utf-8') as f:
-              w = csv.DictWriter(f, fieldnames=cols)
-              w.writeheader()
-              for r in rows:
-                  w.writerow({k: r.get(k, '') for k in cols})
-          print("Wrote", out_fp)
-          PY
+          // Write CSV
+          const cols = ['name','id','hp','attack','defense','spAttack','spDefense','speed','bst',
+                        'type1','type2','abilities','passive','evolution line'];
+
+          function esc(v) {
+            if (v === null || v === undefined) v = '';
+            v = String(v);
+            return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v;
+          }
+          const lines = [cols.join(',')];
+          for (const r of rows) {
+            lines.push(cols.map(c => esc(r[c])).join(','));
+          }
+          fs.writeFileSync(OUT, lines.join('\n'), 'utf8');
+          console.log('Wrote', OUT, 'rows=', rows.length);
+          NODE
 
       - name: Write data_version.txt (Dex commit)
         run: |
