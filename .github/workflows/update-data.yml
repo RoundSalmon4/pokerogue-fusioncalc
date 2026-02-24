@@ -1,4 +1,4 @@
-name: Build pokemon_data.csv from SearchDex data (full replacement)
+name: Build pokemon_data.csv
 
 on:
   workflow_dispatch: {}
