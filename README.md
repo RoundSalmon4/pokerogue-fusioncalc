@@ -27,7 +27,7 @@ This Python script provides a simple graphical user interface (GUI) for calculat
 
 ### How to update info in FusionCalc
 
-* Replace old `pokemon_data.csv` with a new one from this repository. `pokemon_data.csv` is rebuilt daily.
+* Replace old `pokemon_data.csv` with a new one from this repository. `pokemon_data.csv` is checked for updates daily.
 * Place this in the same directory as `FusionCalc.py`
 
 ### Contributing
