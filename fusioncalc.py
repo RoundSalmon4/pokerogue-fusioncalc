@@ -1,4 +1,4 @@
-# PokéRogue Fusion Calculator — build 2026-02-24
+# PokéRogue Fusion Calculator — build 2026-02-25
 import tkinter as tk
 from tkinter import ttk, messagebox
 import csv
@@ -8,7 +8,7 @@ import webbrowser
 import time
 from typing import Dict, Any, Optional
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-BUILD_TAG = "2026-02-24"
+BUILD_TAG = "2026-02-25"
 
 # -------- Data store --------
 pokemon_stats: Dict[str, Dict[str, Any]] = {}
@@ -68,7 +68,7 @@ def open_pokemondb(): webbrowser.open("https://pokemondb.net/")
 
 def open_type_calculator(): webbrowser.open("https://www.pkmn.help/defense/")
 
-def open_pokedex(): webbrowser.open("https://ydarissep.github.io/PokeRogue-Pokedex/")
+def open_pokedex(): webbrowser.open("https://wiki.pokerogue.net/dex:pokedex")
 
 # ===== Ability rule mapping =====
 ABILITY_EFFECTS = {
@@ -155,7 +155,7 @@ def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive
     return effectiveness
 
 def format_type_effectiveness(effectiveness):
-    result = "Type Effectiveness:\n"
+    result = "Damage Taken:\n"
     grouped: Dict[float, list] = {}
     for t, value in effectiveness.items():
         grouped.setdefault(value, []).append(t)
@@ -496,6 +496,91 @@ menubar.add_cascade(label='Resources', menu=resources_menu)
 resources_menu.add_command(label='Pokémon Database', command=open_pokemondb)
 resources_menu.add_command(label='Type Calculator', command=open_type_calculator)
 resources_menu.add_command(label='PokeRogue Pokedex', command=open_pokedex)
+
+# ---- DEBUG MENU ----
+
+def debug_show_ui_diagnostics():
+    try:
+        def pos(widget):
+            try:
+                gi = widget.grid_info()
+                if gi:
+                    return "grid r=%s c=%s span=%s sticky=%s" % (
+                        gi.get('row'), gi.get('column'), gi.get('columnspan','1'), gi.get('sticky',''))
+                else:
+                    return '(not gridded)'
+            except Exception:
+                return '(n/a)'
+        lines = []
+        lines.append("Active Ability combobox present: %s @ %s" % (bool(active_ability_combo), pos(active_ability_combo)))
+        lines.append("Passive Active checkbox present: %s @ %s" % (bool(passive_check), pos(passive_check)))
+        lines.append("")
+        lines.append("Center caption text: " + fusion_caption.cget('text'))
+        messagebox.showinfo('UI Diagnostics', '\n'.join(lines))
+    except Exception as e:
+        messagebox.showerror('UI Diagnostics', str(e))
+
+def debug_show_row(which):
+    name = pokemon1_var.get().strip() if which == 'p1' else pokemon2_var.get().strip()
+    if name not in pokemon_stats:
+        messagebox.showwarning('Current Row', "Selected name not found: %s" % (name or '(empty)'))
+        return
+    row = pokemon_stats[name]
+    parts = []
+    parts.append('Name: ' + name)
+    parts.append('ID: ' + str(row.get('ID')))
+    t1 = row.get('Type_1')
+    t2 = row.get('Type_2')
+    parts.append('Types: ' + (t1 + ('/' + t2 if t2 else '')))
+    parts.append('Abilities: ' + ', '.join(row.get('Abilities', [])))
+    parts.append('Passive: ' + str(row.get('Passive')))
+    parts.append('BST: ' + str(row.get('BST')))
+    parts.append('Evolution line: ' + str(row.get('evolution line')))
+    messagebox.showinfo('Current Row — ' + ('Pokémon 1' if which == 'p1' else 'Pokémon 2'), '\n'.join(parts))
+
+def debug_write_widget_positions():
+    try:
+        with open('widget_positions.log', 'w', encoding='utf-8') as f:
+            f.write('Widget Positions:\n')
+            def dump(parent, indent=0):
+                for w in parent.winfo_children():
+                    manager = w.winfo_manager()
+                    if manager == 'grid':
+                        info = w.grid_info()
+                    elif manager == 'pack':
+                        info = w.pack_info()
+                    else:
+                        info = {}
+                    f.write((' ' * indent) + "%s %s : %s %s\n" % (w.__class__.__name__, str(w), manager, info))
+                    dump(w, indent+1)
+            dump(root)
+        messagebox.showinfo('Debug', 'Widget positions written to widget_positions.log')
+    except Exception as e:
+        messagebox.showerror('Debug', 'Error logging widget positions: %s' % str(e))
+
+def debug_reload_csv():
+    try:
+        count = load_pokemon_data_into(pokemon_stats)
+        pokemon1_filtered_listbox.delete(0, tk.END)
+        pokemon2_filtered_listbox.delete(0, tk.END)
+        for name in pokemon_stats:
+            pokemon1_filtered_listbox.insert(tk.END, name)
+            pokemon2_filtered_listbox.insert(tk.END, name)
+        messagebox.showinfo('Reload CSV', 'Reloaded pokemon_data.csv\nLoaded: %d rows' % count)
+    except Exception as e:
+        messagebox.showerror('Reload CSV', str(e))
+
+# Create Debug menu
+debug_menu = tk.Menu(menubar, tearoff=0)
+menubar.add_cascade(label='Debug', menu=debug_menu)
+debug_menu.add_command(label='Show UI Diagnostics', command=debug_show_ui_diagnostics)
+debug_menu.add_command(label='Show Current Row: Pokémon 1', command=lambda: debug_show_row('p1'))
+debug_menu.add_command(label='Show Current Row: Pokémon 2', command=lambda: debug_show_row('p2'))
+debug_menu.add_separator()
+debug_menu.add_command(label='Write Widget Positions to File', command=debug_write_widget_positions)
+debug_menu.add_separator()
+debug_menu.add_command(label='Reload CSV', command=debug_reload_csv)
+
 
 main_frame = tk.Frame(root)
 main_frame.pack(fill=tk.BOTH, expand=True, padx=10)
