@@ -672,7 +672,7 @@ pokemon1_id = tk.Label(main_frame, font=('Arial', 10))
 pokemon1_id.grid(row=14, column=1, sticky=tk.N, padx=10)
 
 # Center result
-fusion_caption = tk.Label(main_frame, text='Fusion Result (Hidden Ability = 2nd listed ability)', font=('Arial', 12, 'bold'))
+fusion_caption = tk.Label(main_frame, text='Fusion Result', font=('Arial', 12, 'bold'))
 fusion_caption.grid(row=3, column=2, sticky=tk.N, padx=10)
 fusion_info = tk.Text(main_frame, width=50, height=20)
 fusion_info.grid(row=4, column=2, rowspan=10, sticky=tk.NSEW, padx=10)
