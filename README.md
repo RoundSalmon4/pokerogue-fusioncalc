@@ -73,4 +73,4 @@ Displays:
 
 ### Run
 ```bash
-python fusioncalc_test.py
+python fusioncalc.py
