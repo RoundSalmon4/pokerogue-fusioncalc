@@ -192,13 +192,138 @@ ABILITY_EFFECTS = {
     'MOTOR DRIVE': {'immunities': ['Electric']},
     'SAP SIPPER': {'immunities': ['Grass']},
     'SAPSIPPER': {'immunities': ['Grass']},
-    'PURIFYING SALT': {'immunities': ['Ghost']},
+    'PURIFYING SALT': {'halve': ['Ghost']},
     'THICK FAT': {'halve': ['Fire', 'Ice']},
     'HEATPROOF': {'halve': ['Fire']},
     'WATER BUBBLE': {'halve': ['Fire']},
 }
 
 
+
+
+# ===== Display options (panel section visibility) — DEBUG v3 =====
+
+def init_display_vars():
+    logging.debug('[DisplayOptions] v3 init_display_vars() called')
+    vars = {
+        'p1': {k: tk.BooleanVar(value=True) for k in ['type','abilities','hidden_ability','passive','bst','evolution','damage']},
+        'p2': {k: tk.BooleanVar(value=True) for k in ['type','abilities','hidden_ability','passive','bst','evolution','damage']},
+        'fusion': {k: tk.BooleanVar(value=True) for k in ['fused_type','bst','diffs','abilities','ability_effects','damage','quick_compare']},
+    }
+    logging.debug('[DisplayOptions] v3 defaults: ' + str({p:{k:v.get() for k,v in d.items()} for p,d in vars.items()}))
+    return vars
+
+def is_section_enabled(panel: str, key: str) -> bool:
+    try:
+        val = bool(display_vars[panel][key].get())
+        logging.debug(f"[DisplayOptions] v3 is_section_enabled(panel={panel}, key={key}) -> {val}")
+        return val
+    except Exception as e:
+        logging.debug(f"[DisplayOptions] v3 is_section_enabled error panel={panel} key={key}: {e}")
+        return True
+
+def _dump_display_vars(prefix=''):
+    try:
+        snap = {p:{k:v.get() for k,v in d.items()} for p,d in display_vars.items()}
+        logging.debug(f"[DisplayOptions] v3 {prefix} state: {snap}")
+    except Exception as e:
+        logging.debug(f"[DisplayOptions] v3 dump failed: {e}")
+
+def show_display_options():
+    try:
+        for w in root.winfo_children():
+            if isinstance(w, tk.Toplevel) and str(w.title()) == 'Display Options':
+                try:
+                    w.lift(); w.focus_set()
+                except Exception:
+                    pass
+                return
+    except Exception:
+        pass
+    dlg = tk.Toplevel(root)
+    dlg.title('Display Options')
+    dlg.transient(root)
+    dlg.grab_set()
+
+    def cb_refresh():
+        _dump_display_vars('on-toggle')
+        try:
+            refresh_side_panels()
+            recalc_if_ready()
+        except Exception as e:
+            logging.debug(f"[DisplayOptions] v3 refresh error: {e}")
+
+    hdr0 = tk.Label(dlg, text='Section', font=('Arial', 10, 'bold'))
+    hdr1 = tk.Label(dlg, text='Pokémon 1', font=('Arial', 10, 'bold'))
+    hdr2 = tk.Label(dlg, text='Pokémon 2', font=('Arial', 10, 'bold'))
+    hdr3 = tk.Label(dlg, text='Fusion', font=('Arial', 10, 'bold'))
+    hdr0.grid(row=0, column=0, padx=8, pady=6)
+    hdr1.grid(row=0, column=1, padx=8, pady=6)
+    hdr2.grid(row=0, column=2, padx=8, pady=6)
+    hdr3.grid(row=0, column=3, padx=8, pady=6)
+
+    rows = [
+        ('Type', 'type', 'type', 'fused_type'),
+        ('Abilities', 'abilities', 'abilities', 'abilities'),
+        ('Hidden Ability', 'hidden_ability', 'hidden_ability', None),
+        ('Passive', 'passive', 'passive', None),
+        ('BST & Stats', 'bst', 'bst', 'bst'),
+        ('Evolution', 'evolution', 'evolution', None),
+        ('Damage Taken', 'damage', 'damage', 'damage'),
+        ('Ability Effect Summary', None, None, 'ability_effects'),
+        ('Quick Compare', None, None, 'quick_compare'),
+    ]
+
+    def add_row(r, label, k1, k2, kf):
+        tk.Label(dlg, text=label).grid(row=r, column=0, sticky='w', padx=8, pady=2)
+        if k1:
+            tk.Checkbutton(dlg, variable=display_vars['p1'][k1], command=cb_refresh).grid(row=r, column=1)
+        else:
+            tk.Label(dlg, text='—').grid(row=r, column=1)
+        if k2:
+            tk.Checkbutton(dlg, variable=display_vars['p2'][k2], command=cb_refresh).grid(row=r, column=2)
+        else:
+            tk.Label(dlg, text='—').grid(row=r, column=2)
+        if kf:
+            tk.Checkbutton(dlg, variable=display_vars['fusion'][kf], command=cb_refresh).grid(row=r, column=3)
+        else:
+            tk.Label(dlg, text='—').grid(row=r, column=3)
+
+    r = 1
+    for label, k1, k2, kf in rows:
+        add_row(r, label, k1, k2, kf)
+        r += 1
+
+    # Compare target radios (Fusion)
+    cmpf = tk.Frame(dlg)
+    cmpf.grid(row=r, column=0, columnspan=4, sticky='w', padx=8, pady=(6,2))
+    tk.Label(cmpf, text='Compare vs:').pack(side=tk.LEFT, padx=(0,8))
+    tk.Radiobutton(cmpf, text='Pokémon 1', value='p1', variable=quick_compare_target_var, command=cb_refresh).pack(side=tk.LEFT, padx=4)
+    tk.Radiobutton(cmpf, text='Pokémon 2', value='p2', variable=quick_compare_target_var, command=cb_refresh).pack(side=tk.LEFT, padx=4)
+    r += 1
+
+    btns = tk.Frame(dlg)
+    btns.grid(row=r, column=0, columnspan=4, pady=10)
+
+    def set_all(val: bool):
+        for panel in display_vars.values():
+            for var in panel.values():
+                try:
+                    var.set(val)
+                except Exception:
+                    pass
+        _dump_display_vars('set_all')
+
+    tk.Button(btns, text='Select All', command=lambda: (set_all(True), cb_refresh())).pack(side=tk.LEFT, padx=5)
+    tk.Button(btns, text='Select None', command=lambda: (set_all(False), cb_refresh())).pack(side=tk.LEFT, padx=5)
+    tk.Button(btns, text='Restore Defaults', command=lambda: (set_all(True), cb_refresh())).pack(side=tk.LEFT, padx=5)
+
+    def apply_and_close():
+        _dump_display_vars('apply_close')
+        cb_refresh()
+        dlg.destroy()
+
+    tk.Button(btns, text='Apply & Close', command=apply_and_close).pack(side=tk.LEFT, padx=5)
 def _normalize_ability(name: str) -> str:
     return (name or '').strip().upper()
 
@@ -858,6 +983,11 @@ clear_button.pack(side=tk.LEFT, padx=5)
 # Options row
 options_frame = tk.Frame(main_frame)
 options_frame.grid(row=2, column=2, sticky='n', pady=2)
+
+# Initialize Display Options state (v3)
+display_vars = init_display_vars()
+_dump_display_vars('after-init')
+quick_compare_target_var = tk.StringVar(value='p2')
 options_frame.grid_columnconfigure(0, weight=1)
 options_frame.grid_columnconfigure(1, weight=1)
 
@@ -947,4 +1077,249 @@ status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
 
 print(f"[FusionCalc] Running build {BUILD_TAG}")
+
+
+
+# ===== v3 gated renderers =====
+
+def fill_side_panel_v3(name: str, info_text: tk.Text, id_label: tk.Label, name_label: tk.Label):
+    if not name or name not in pokemon_stats:
+        return
+    panel_key = 'p1' if 'pokemon1_info' in globals() and info_text is pokemon1_info else 'p2'
+    logging.debug(f"[Render v3] fill_side_panel panel={panel_key} name={name}")
+    name_label.config(text=name)
+    stats = pokemon_stats[name]
+    t1, t2 = stats['Type_1'], stats['Type_2']
+    ptype = t1 if (not t2 or t2 == t1) else f"{t1}/{t2}"
+    info_text.delete('1.0', tk.END)
+    _ensure_stat_tags(info_text)
+    if is_section_enabled(panel_key, 'type'):
+        info_text.insert(tk.END, 'Type: ', 'strong_label')
+        info_text.insert(tk.END, f"{ptype}\n\n")
+    if is_section_enabled(panel_key, 'abilities'):
+        abilities = list(dict.fromkeys(stats.get('Abilities', [])))
+        visible = [a for i,a in enumerate(abilities) if i!=1] if abilities else []
+        if visible:
+            info_text.insert(tk.END, 'Abilities: ', 'strong_label')
+            info_text.insert(tk.END, f"{', '.join(visible)}\n")
+    if is_section_enabled(panel_key, 'hidden_ability'):
+        abilities = list(dict.fromkeys(stats.get('Abilities', [])))
+        hidden = abilities[1] if len(abilities)>1 else ''
+        if hidden:
+            info_text.insert(tk.END, 'Hidden Ability: ', 'strong_label')
+            info_text.insert(tk.END, f"{hidden}\n")
+    if is_section_enabled(panel_key, 'passive') and stats.get('Passive'):
+        info_text.insert(tk.END, 'Passive: ', 'strong_label')
+        info_text.insert(tk.END, f"{stats['Passive']}\n")
+    if ((is_section_enabled(panel_key, 'abilities') and stats.get('Abilities')) or
+        (is_section_enabled(panel_key, 'hidden_ability') and len(stats.get('Abilities',[]))>1) or
+        (is_section_enabled(panel_key, 'passive') and stats.get('Passive'))):
+        info_text.insert(tk.END, "\n")
+    if is_section_enabled(panel_key, 'bst'):
+        info_text.insert(tk.END, 'BST:', 'strong_label')
+        info_text.insert(tk.END, "\n")
+        insert_hr(info_text)
+        orig = {'HP': stats['HP'], 'Attack': stats['Attack'], 'Defense': stats['Defense'], 'Sp. Atk': stats['Sp. Atk'], 'Sp. Def': stats['Sp. Def'], 'Speed': stats['Speed']}
+        items_dict = flip_stats_dict(orig) if flip_stat_var.get() else orig
+        items = [('HP', items_dict['HP']), ('Attack', items_dict['Attack']), ('Defense', items_dict['Defense']), ('Sp. Atk', items_dict['Sp. Atk']), ('Sp. Def', items_dict['Sp. Def']), ('Speed', items_dict['Speed'])]
+        write_stat_section(info_text, items, 'Total BST', stats['BST'])
+        info_text.insert(tk.END, "\n")
+    evo_line = (stats.get('evolution line') or '').strip()
+    if is_section_enabled(panel_key, 'evolution') and evo_line:
+        info_text.insert(tk.END, 'Evolution: ', 'strong_label')
+        parts = [p.strip() for p in evo_line.split(',') if p.strip()]
+        for _idx, _pname in enumerate(parts):
+            tag = f"evo_{id(info_text)}_{_idx}"
+            info_text.tag_config(tag, foreground='#1a73e8', underline=True)
+            info_text.tag_bind(tag, '<Button-1>', lambda e, n=_pname, w=info_text: on_click_evo(n, w))
+            info_text.tag_bind(tag, '<Enter>', lambda e, w=info_text: w.config(cursor='hand2'))
+            info_text.tag_bind(tag, '<Leave>', lambda e, w=info_text: w.config(cursor=''))
+            info_text.insert(tk.END, _pname, tag)
+            if _idx != len(parts) - 1:
+                info_text.insert(tk.END, ', ')
+        info_text.insert(tk.END, '\n\n')
+    if is_section_enabled(panel_key, 'damage'):
+        eff = calculate_type_effectiveness(t1, t2, active_ability=None, passive_ability=stats['Passive'])
+        info_text.insert(tk.END, 'Damage Taken: ', 'strong_label')
+        info_text.insert(tk.END, "\n\n")
+        _eff_str = format_type_effectiveness(eff)
+        _eff_body = _eff_str.split('\n',1)[1] if '\n' in _eff_str else ''
+        info_text.insert(tk.END, _eff_body)
+    id_label.config(text=f"Pokedex ID: {stats['ID']}")
+
+
+def calculate_fusion_stats_v3(p1, p2):
+    t0 = time.perf_counter()
+    logging.info(f"[Render v3] Calculating fusion stats for {p1} and {p2}")
+    try:
+        if p1 in pokemon_stats and p2 in pokemon_stats:
+            fusion_stats = {
+                'HP': avg_round_tenth(pokemon_stats[p1]['HP'], pokemon_stats[p2]['HP']),
+                'Attack': avg_round_tenth(pokemon_stats[p1]['Attack'], pokemon_stats[p2]['Attack']),
+                'Defense': avg_round_tenth(pokemon_stats[p1]['Defense'], pokemon_stats[p2]['Defense']),
+                'Sp. Atk': avg_round_tenth(pokemon_stats[p1]['Sp. Atk'], pokemon_stats[p2]['Sp. Atk']),
+                'Sp. Def': avg_round_tenth(pokemon_stats[p1]['Sp. Def'], pokemon_stats[p2]['Sp. Def']),
+                'Speed': avg_round_tenth(pokemon_stats[p1]['Speed'], pokemon_stats[p2]['Speed']),
+            }
+            fused_bst = round(sum(fusion_stats.values()), 1)
+            p1_t1 = pokemon_stats[p1]['Type_1']
+            p1_t2 = pokemon_stats[p1]['Type_2']
+            p2_t1 = pokemon_stats[p2]['Type_1']
+            p2_t2 = pokemon_stats[p2]['Type_2']
+            fused_type1, fused_type2 = compute_fused_typing(p1_t1, p1_t2, p2_t1, p2_t2)
+            fused_type = fused_type1 if fused_type2 == '' or fused_type2 == fused_type1 else f"{fused_type1}/{fused_type2}"
+
+            fusion_info.delete('1.0', tk.END)
+            if is_section_enabled('fusion', 'fused_type'):
+                fusion_info.insert(tk.END, 'Fused Type: ', 'strong_label')
+                fusion_info.insert(tk.END, f"{fused_type}\n\n\n")
+            if is_section_enabled('fusion', 'bst'):
+                fusion_info.insert(tk.END, 'BST:', 'strong_label')
+                fusion_info.insert(tk.END, "\n")
+                insert_hr(fusion_info)
+                items_dict = flip_stats_dict(fusion_stats) if flip_stat_var.get() else fusion_stats
+                items = [('HP', items_dict['HP']), ('Attack', items_dict['Attack']), ('Defense', items_dict['Defense']), ('Sp. Atk', items_dict['Sp. Atk']), ('Sp. Def', items_dict['Sp. Def']), ('Speed', items_dict['Speed'])]
+                write_stat_section(fusion_info, items, 'Total BST', fused_bst)
+                fusion_info.insert(tk.END, "\n")
+            if is_section_enabled('fusion', 'diffs'):
+                diff1 = fused_bst - float(pokemon_stats[p1]['BST'])
+                diff2 = fused_bst - float(pokemon_stats[p2]['BST'])
+                fusion_info.insert(tk.END, f"Difference from {p1}: {format_number_trim(diff1)}\n")
+                fusion_info.insert(tk.END, f"Difference from {p2}: {format_number_trim(diff2)}\n\n")
+            abilities = list(dict.fromkeys(pokemon_stats[p2]['Abilities']))
+            visible_abilities = [a for i, a in enumerate(abilities) if i != 1] if abilities else []
+            if is_section_enabled('fusion', 'abilities'):
+                fusion_info.insert(tk.END, 'Abilities: ', 'strong_label')
+                fusion_info.insert(tk.END, f"{', '.join(visible_abilities)}\n")
+            active_ability = (active_ability_var.get() or (abilities[0] if abilities else '')).strip()
+            hidden_ability = abilities[1] if len(abilities) > 1 else ''
+            if is_section_enabled('fusion', 'abilities') and active_ability:
+                fusion_info.insert(tk.END, 'Active Ability: ', 'strong_label')
+                fusion_info.insert(tk.END, f"{active_ability}\n")
+                if hidden_ability and active_ability == hidden_ability:
+                    fusion_info.insert(tk.END, 'Hidden Ability: ', 'strong_label')
+                    fusion_info.insert(tk.END, f"{hidden_ability}\n")
+            passive_ability = pokemon_stats[p1]['Passive']
+            passive_on = passive_active_var.get()
+            if is_section_enabled('fusion', 'abilities') and passive_ability and passive_on:
+                fusion_info.insert(tk.END, 'Passive (from Pokémon 1): ', 'strong_label')
+                fusion_info.insert(tk.END, f"{passive_ability} (active)\n")
+            def _ability_effect_summary_line(label: str, ability_name: str):
+                abil = _normalize_ability(ability_name)
+                eff = ABILITY_EFFECTS.get(abil, {})
+                parts = []
+                if eff.get('immunities'):
+                    parts.append(f"immunities: {', '.join(eff['immunities'])}")
+                if eff.get('halve'):
+                    parts.append(f"halves: {', '.join(eff['halve'])}")
+                if abil == 'WONDER GUARD':
+                    parts.append('wonder guard: immune to all non-super-effective')
+                if not parts:
+                    parts.append('no type-chart effects')
+                return f"{label}: " + '; '.join(parts)
+            if is_section_enabled('fusion', 'ability_effects'):
+                ae = _ability_effect_summary_line('Active effect', active_ability)
+                if active_ability and 'no type-chart effects' not in ae:
+                    fusion_info.insert(tk.END, ae + '\n')
+                pe = _ability_effect_summary_line('Passive effect', (passive_ability if passive_on else ''))
+                if passive_ability and passive_on and 'no type-chart effects' not in pe:
+                    fusion_info.insert(tk.END, pe + '\n')
+                fusion_info.insert(tk.END, '\n')
+
+            # --- Quick Compare (typing-only deltas) ---
+            if is_section_enabled('fusion', 'quick_compare'):
+                try:
+                    target_key = quick_compare_target_var.get() if 'quick_compare_target_var' in globals() else 'p2'
+                    if target_key == 'p1':
+                        bt1, bt2 = pokemon_stats[p1]['Type_1'], pokemon_stats[p1]['Type_2']
+                        target_name = p1
+                    else:
+                        bt1, bt2 = pokemon_stats[p2]['Type_1'], pokemon_stats[p2]['Type_2']
+                        target_name = p2
+                    eff_fused_raw = calculate_type_effectiveness(fused_type1, fused_type2, active_ability=None, passive_ability=None)
+                    eff_base_raw  = calculate_type_effectiveness(bt1, bt2, active_ability=None, passive_ability=None)
+                    def group_effects(eff):
+                        groups = {0.0:set(), 0.25:set(), 0.5:set(), 1.0:set(), 2.0:set(), 4.0:set()}
+                        for t,v in eff.items():
+                            if v <= 0.0: groups[0.0].add(t)
+                            elif v <= 0.25: groups[0.25].add(t)
+                            elif v <= 0.5: groups[0.5].add(t)
+                            elif v >= 4.0: groups[4.0].add(t)
+                            elif v >= 2.0: groups[2.0].add(t)
+                            else: groups[1.0].add(t)
+                        return groups
+                    gf = group_effects(eff_fused_raw)
+                    gb = group_effects(eff_base_raw)
+                    new_imm   = sorted(gf[0.0]   - gb[0.0])
+                    lost_imm  = sorted(gb[0.0]   - gf[0.0])
+                    new_wk    = sorted((gf[2.0] | gf[4.0]) - (gb[2.0] | gb[4.0]))
+                    lost_wk   = sorted((gb[2.0] | gb[4.0]) - (gf[2.0] | gf[4.0]))
+                    new_res   = sorted((gf[0.25] | gf[0.5]) - (gb[0.25] | gb[0.5]))
+                    lost_res  = sorted((gb[0.25] | gb[0.5]) - (gf[0.25] | gf[0.5]))
+                    fusion_info.insert(tk.END, f"Quick Compare vs {target_name}: ", 'strong_label')
+                    fusion_info.insert(tk.END, "\n")
+                    if new_imm:
+                        fusion_info.insert(tk.END, f"  New immunities: {', '.join(new_imm)}\n")
+                    if lost_imm:
+                        fusion_info.insert(tk.END, f"  Lost immunities: {', '.join(lost_imm)}\n")
+                    if new_wk:
+                        fusion_info.insert(tk.END, f"  Gained weaknesses (≥2×): {', '.join(new_wk)}\n")
+                    if lost_wk:
+                        fusion_info.insert(tk.END, f"  Lost weaknesses (≥2×): {', '.join(lost_wk)}\n")
+                    if new_res:
+                        fusion_info.insert(tk.END, f"  Gained resistances (≤½×): {', '.join(new_res)}\n")
+                    if lost_res:
+                        fusion_info.insert(tk.END, f"  Lost resistances (≤½×): {', '.join(lost_res)}\n")
+                    if not (new_imm or lost_imm or new_wk or lost_wk or new_res or lost_res):
+                        fusion_info.insert(tk.END, "  No changes in immunities/weaknesses/resistances vs baseline.\n")
+                    fusion_info.insert(tk.END, "\n")
+                except Exception as _e:
+                    logging.debug(f"[QuickCompare] error: {_e}")
+
+            if is_section_enabled('fusion', 'damage'):
+                eff = calculate_type_effectiveness(
+                    fused_type1, fused_type2,
+                    active_ability=active_ability,
+                    passive_ability=(passive_ability if passive_on else None)
+                )
+                fusion_info.insert(tk.END, 'Damage Taken: ', 'strong_label')
+                fusion_info.insert(tk.END, "\n\n")
+                _eff_str = format_type_effectiveness(eff)
+                _eff_body = _eff_str.split('\n',1)[1] if '\n' in _eff_str else ''
+                fusion_info.insert(tk.END, _eff_body)
+            dt_ms = (time.perf_counter() - t0) * 1000.0
+            status_text.set(f"Fused Type: {fused_type} Active: {active_ability or '—'} Passive: {'ON' if passive_on else 'OFF'} Flip: {'ON' if flip_stat_var.get() else 'OFF'} Calc: {dt_ms:.1f} ms")
+        else:
+            fusion_info.delete('1.0', tk.END)
+            fusion_info.insert(tk.END, 'Pokémon not found.')
+            status_text.set('Ready.')
+    except Exception as e:
+        logging.error(f"Error in calculate_fusion_stats_v3: {str(e)}", exc_info=True)
+        messagebox.showerror('Error', f"An error occurred during fusion: {str(e)}")
+
+
+
+
+
+# ===== v3 hotfix binding =====
+try:
+    display_vars
+except NameError:
+    display_vars = init_display_vars()
+    logging.debug('[Hotfix v3] display_vars initialized (fallback)')
+# Initialize Quick Compare target if missing
+if 'quick_compare_target_var' not in globals():
+    quick_compare_target_var = tk.StringVar(value='p2')
+# Bind v3 renderers
+fill_side_panel = fill_side_panel_v3
+calculate_fusion_stats = calculate_fusion_stats_v3
+logging.debug('[Hotfix v3] Bound fill_side_panel -> v3, calculate_fusion_stats -> v3')
+# Ensure Display Options button exists
+try:
+    show_display_btn = tk.Button(options_frame, text='Display Options…', command=show_display_options)
+    show_display_btn.grid(row=2, column=0, columnspan=2, padx=5, pady=(6,0))
+except Exception as _e:
+    logging.debug(f'[Hotfix v3] Could not add Display Options button: {_e}')
+
+
 root.mainloop()
