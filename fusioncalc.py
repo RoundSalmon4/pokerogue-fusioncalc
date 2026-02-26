@@ -1,5 +1,5 @@
 
-# PokéRogue Fusion Calculator — build 2026-02-25 (patched)
+# PokéRogue Fusion Calculator — build 2026-02-26 (fusion typing patched, AST-verified)
 import tkinter as tk
 from tkinter import ttk, messagebox
 import csv
@@ -183,7 +183,7 @@ ABILITY_EFFECTS = {
     'LEVITATE': {'immunities': ['Ground']},
     'EARTH EATER': {'immunities': ['Ground']},
     'WATER ABSORB': {'immunities': ['Water']},
-    'DRY SKIN': {'immunities': ['Water'], 'multiply': {'Fire': 1.25}},
+    'DRY SKIN': {'immunities': ['Water']},
     'STORM DRAIN': {'immunities': ['Water']},
     'FLASH FIRE': {'immunities': ['Fire']},
     'WELL-BAKED BODY': {'immunities': ['Fire']},
@@ -192,7 +192,7 @@ ABILITY_EFFECTS = {
     'MOTOR DRIVE': {'immunities': ['Electric']},
     'SAP SIPPER': {'immunities': ['Grass']},
     'SAPSIPPER': {'immunities': ['Grass']},
-    'PURIFYING SALT': {'halve': ['Ghost']},
+    'PURIFYING SALT': {'immunities': ['Ghost']},
     'THICK FAT': {'halve': ['Fire', 'Ice']},
     'HEATPROOF': {'halve': ['Fire']},
     'WATER BUBBLE': {'halve': ['Fire']},
@@ -256,10 +256,6 @@ def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive
         for half in eff.get('halve', []):
             if half in effectiveness:
                 effectiveness[half] *= 0.5
-        # General multipliers (e.g., Dry Skin vs Fire = 1.25x)
-        for _t, _mult in eff.get('multiply', {}).items():
-            if _t in effectiveness:
-                effectiveness[_t] *= float(_mult)
 
     if act:
         apply_effects(act)
@@ -275,21 +271,24 @@ def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive
 
 def format_type_effectiveness(effectiveness):
     result = "Damage Taken:\n"
-    grouped = {}
+    grouped: Dict[float, list] = {}
     for t, value in effectiveness.items():
-        key = round(float(value), 3)
-        grouped.setdefault(key, []).append(t)
-    for k in grouped:
-        grouped[k].sort()
-    if 0.0 in grouped:
-        result += f"Immune: {', '.join(grouped[0.0])}\n"
-    keys = sorted([k for k in grouped.keys() if k != 0.0], reverse=True)
-    def _fmt_mult(x):
-        return (f"{x:.3f}").rstrip('0').rstrip('.')
-    for k in keys:
-        result += f"{_fmt_mult(k)}x damage: {', '.join(grouped[k])}\n"
+        grouped.setdefault(value, []).append(t)
+    for value in sorted(grouped.keys(), reverse=True):
+        types = grouped[value]
+        if value == 0:
+            result += f"Immune: {', '.join(types)}\n"
+        elif value == 0.25:
+            result += f"1/4x damage: {', '.join(types)}\n"
+        elif value == 0.5:
+            result += f"1/2x damage: {', '.join(types)}\n"
+        elif value == 1:
+            result += f"1x damage: {', '.join(types)}\n"
+        elif value == 2:
+            result += f"2x damage: {', '.join(types)}\n"
+        elif value == 4:
+            result += f"4x damage: {', '.join(types)}\n"
     return result.strip()
-
 
 # ===== Small helpers for UI reuse =====
 
@@ -375,6 +374,30 @@ def populate_active_abilities_for(pokemon2_name: str):
     except Exception:
         pass
 
+# --- Fusion typing helper (AST-verified) ---
+def compute_fused_typing(p1_t1: str, p1_t2: str, p2_t1: str, p2_t2: str):
+    """Return (type1, type2) following PokéRogue rules:
+    - Primary contributes its 1st (or only) type
+    - Secondary contributes its 2nd (or only) type with exceptions:
+      * If Secondary is dual-type and its 2nd type == Primary's 1st, use its other type instead
+      * If Secondary is mono-type and equals Primary's 1st, preserve Primary's original typing
+    """
+    fused_type1 = p1_t1
+    fused_type2 = ''
+    p2_is_dual = bool(p2_t2)
+    if p2_is_dual:
+        if p2_t2 == p1_t1:
+            fused_type2 = p2_t1 if p2_t1 != p1_t1 else ''
+        else:
+            fused_type2 = p2_t2 if p2_t2 != p1_t1 else (p2_t1 if p2_t1 != p1_t1 else '')
+    else:
+        if p2_t1 == p1_t1:
+            fused_type2 = p1_t2 if (p1_t2 and p1_t2 != p1_t1) else ''
+        else:
+            fused_type2 = p2_t1
+    return fused_type1, fused_type2
+
+
 # ===== FUSION + RECALC =====
 
 def calculate_fusion_stats(p1, p2):
@@ -399,6 +422,19 @@ def calculate_fusion_stats(p1, p2):
             )
 
             fusion_info.delete('1.0', tk.END)
+
+
+            # Correct fused typing per PokéRogue rules (handles mono-type overlap case)
+
+            p1_t1 = pokemon_stats[p1]['Type_1']
+
+            p1_t2 = pokemon_stats[p1]['Type_2']
+
+            p2_t1 = pokemon_stats[p2]['Type_1']
+
+            p2_t2 = pokemon_stats[p2]['Type_2']
+
+            fused_type1, fused_type2 = compute_fused_typing(p1_t1, p1_t2, p2_t1, p2_t2)
             fused_type = fused_type1 if fused_type2 == '' or fused_type2 == fused_type1 else f"{fused_type1}/{fused_type2}"
 
             fusion_info.insert(tk.END, 'Fused Type: ', 'strong_label')
