@@ -183,7 +183,7 @@ ABILITY_EFFECTS = {
     'LEVITATE': {'immunities': ['Ground']},
     'EARTH EATER': {'immunities': ['Ground']},
     'WATER ABSORB': {'immunities': ['Water']},
-    'DRY SKIN': {'immunities': ['Water']},
+    'DRY SKIN': {'immunities': ['Water'], 'multiply': {'Fire': 1.25}},
     'STORM DRAIN': {'immunities': ['Water']},
     'FLASH FIRE': {'immunities': ['Fire']},
     'WELL-BAKED BODY': {'immunities': ['Fire']},
@@ -192,7 +192,7 @@ ABILITY_EFFECTS = {
     'MOTOR DRIVE': {'immunities': ['Electric']},
     'SAP SIPPER': {'immunities': ['Grass']},
     'SAPSIPPER': {'immunities': ['Grass']},
-    'PURIFYING SALT': {'immunities': ['Ghost']},
+    'PURIFYING SALT': {'halve': ['Ghost']},
     'THICK FAT': {'halve': ['Fire', 'Ice']},
     'HEATPROOF': {'halve': ['Fire']},
     'WATER BUBBLE': {'halve': ['Fire']},
@@ -256,6 +256,10 @@ def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive
         for half in eff.get('halve', []):
             if half in effectiveness:
                 effectiveness[half] *= 0.5
+        # General multipliers (e.g., Dry Skin vs Fire = 1.25x)
+        for _t, _mult in eff.get('multiply', {}).items():
+            if _t in effectiveness:
+                effectiveness[_t] *= float(_mult)
 
     if act:
         apply_effects(act)
@@ -271,24 +275,21 @@ def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive
 
 def format_type_effectiveness(effectiveness):
     result = "Damage Taken:\n"
-    grouped: Dict[float, list] = {}
+    grouped = {}
     for t, value in effectiveness.items():
-        grouped.setdefault(value, []).append(t)
-    for value in sorted(grouped.keys(), reverse=True):
-        types = grouped[value]
-        if value == 0:
-            result += f"Immune: {', '.join(types)}\n"
-        elif value == 0.25:
-            result += f"1/4x damage: {', '.join(types)}\n"
-        elif value == 0.5:
-            result += f"1/2x damage: {', '.join(types)}\n"
-        elif value == 1:
-            result += f"1x damage: {', '.join(types)}\n"
-        elif value == 2:
-            result += f"2x damage: {', '.join(types)}\n"
-        elif value == 4:
-            result += f"4x damage: {', '.join(types)}\n"
+        key = round(float(value), 3)
+        grouped.setdefault(key, []).append(t)
+    for k in grouped:
+        grouped[k].sort()
+    if 0.0 in grouped:
+        result += f"Immune: {', '.join(grouped[0.0])}\n"
+    keys = sorted([k for k in grouped.keys() if k != 0.0], reverse=True)
+    def _fmt_mult(x):
+        return (f"{x:.3f}").rstrip('0').rstrip('.')
+    for k in keys:
+        result += f"{_fmt_mult(k)}x damage: {', '.join(grouped[k])}\n"
     return result.strip()
+
 
 # ===== Small helpers for UI reuse =====
 
