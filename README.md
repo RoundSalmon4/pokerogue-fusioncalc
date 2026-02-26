@@ -1,44 +1,45 @@
-# PokeRogue Fusion Calculator
+# PokéRogue Fusion Calculator
 
-This Python script provides a simple graphical user interface (GUI) for calculating Pokémon fusions in the game PokeRogue.
+A fast, Tkinter-based GUI tool for exploring **PokéRogue** fusions. Pick two Pokémon, see the fused stats and typing, preview ability effects on defensive matchups, and jump to helpful resources—all in one window.
 
-![PokeRogue Fusion Calculator](https://i.postimg.cc/26nW3Dz5/Screenshot-2026-02-23-112531.jpg) 
+![PokeRogue Fusion Calculator](https://i.postimg.cc/Y9RGNyCs/Screenshot-2026-02-26-103231.jpg)
 
-![PokeRogue Fusion Calculator](https://i.postimg.cc/fbGXwLhy/Screenshot-2026-02-23-112549.jpg)
 
-## Features
+---
 
-* Select two Pokémon for fusion from filterable menus.
-* Calculate and display the resulting fusion's stats.
-* Display type effectiveness for the fused Pokémon.
-* Provide links to additional PokeRogue resources.
-* Toggle for Dark Mode theme.
+## Key Features
 
-### How to use
+- **Filter-as-you-type search** for each side, with support for:
+  - `name:`, `type:`, `ability:`, `passive:`, `id:` / `#`
+  - Numeric filters: `hp|attack|defense|sp. atk|sp. def|speed|bst` with `>`, `<`, `>=`, `<=`, `=`
+  - Example: `hp>=100 speed<120 bst>500` 
+- **Sticky search option** (Options → *Keep search text when selecting*) so your search terms remain when you pick a Pokémon.
+- **Fusion panel** with clean, aligned stat presentation:
+  - Consistent left-starting numeric column (including **Total BST**)
+  - Intentional blank lines between sections for readability:
+    - Blank line before **Total BST**
+    - Blank line between **Total BST** and the *Difference from …* lines
+    - Blank line between **Fused Type** and the **BST** header 
+- **Ability controls**:
+  - **Active Ability** drop-down (from Pokémon 2)
+  - **Passive Active** toggle (from Pokémon 1), centered in the options pane
+  - Defensive matchup effects shown when abilities meaningfully change the type chart (e.g., immunities or halved damage). 
+- **Damage Taken** section formatting:
+  - Bold **“Damage Taken:”** heading
+  - **Blank line** between the heading and the list for easy scanning 
+- **Flip Stat Challenge** (Challenges menu) to view stats under the in-game Flip Stat rule. 
+- **Clickable evolution line** in each side panel—jump to any stage with a click.
+- **Helpful resource links** in the menu (Pokémon Database, Type Calculator, PokéRogue Pokédex).
+- Lightweight status bar with fuse timing and current options summary.
 
-* Download `FusionCalc.py`, and `pokemon_data.csv` into the same directory.
-* Verify you meet the requirements.
-* run `FusionCalc.py`
+---
+
+## Getting Started
 
 ### Requirements
+- **Python 3.x**
+- The standard library’s **tkinter** module (ships with most CPython installers)
 
-* Python 3.x
-* tkinter library
-
-### How to update info in FusionCalc
-
-* Replace old `pokemon_data.csv` with a new one from this repository. `pokemon_data.csv` is checked for updates daily.
-* Place this in the same directory as `FusionCalc.py`
-
-### Contributing
-
-Contributions to improve the calculator or add new features are welcome. Please submit pull requests or open issues on the project repository.
-
-### License
-
-This project is licensed under the AGPL-3.0 license. See the `LICENSE` file for details.
-
-### Acknowledgements
-
-* PokeRogue devs
-* Sandstormer
+### Installation
+1. Download **`fusioncalc.py`** and **`pokemon_data.csv`** into the **same directory**.
+2. Ensure Python can import `tkinter` on your system.
