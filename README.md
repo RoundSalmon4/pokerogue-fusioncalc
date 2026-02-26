@@ -10,7 +10,7 @@ A modern, lightweight GUI tool for exploring **PokéRogue** fusion combinations.
 
 ### 🔍 Powerful Search & Filters
 - Instant filter‑as‑you‑type search for both Pokémon slots
-- Advanced query filters:
+- Advanced query filters like:
   - `name:term`
   - `type:fire`
   - `ability:levitate`
@@ -37,8 +37,6 @@ Every evolution entry is clickable — select any stage instantly.
 ### 🛡️ Damage Taken Overview
 A clean, easy‑to‑scan defensive chart:
 - Immunities, resistances, and weaknesses
-- Bold **Damage Taken:** header
-- A blank line separating the header from the list for readability
 
 ### 🌀 Flip Stat Challenge Mode
 Instantly apply the Flip Stat Challenge ruleset to both base Pokémon and the fusion.
