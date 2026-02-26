@@ -1,36 +1,78 @@
 # PokéRogue Fusion Calculator
 
-A fast, Tkinter-based GUI tool for exploring **PokéRogue** fusions. Pick two Pokémon, see the fused stats and typing, preview ability effects on defensive matchups, and jump to helpful resources—all in one window.
+A modern, lightweight GUI tool for exploring **PokéRogue** fusion combinations. Quickly search Pokémon, analyze fusion results, inspect abilities, evaluate defensive matchups, and navigate key PokéRogue resources — all in one interface.
 
-![PokeRogue Fusion Calculator](https://i.postimg.cc/Y9RGNyCs/Screenshot-2026-02-26-103231.jpg)
+<p align="center">
+  <img src="https://i.postimg.cc/Y9RGNyCs/Screenshot-2026-02-26-103231.jpg" width="600">
+</p>
 
+## ✨ Features
+
+### 🔍 Powerful Search & Filters
+- Instant filter‑as‑you‑type search for both Pokémon slots
+- Advanced query filters:
+  - `name:term`
+  - `type:fire`
+  - `ability:levitate`
+  - `passive:clear body`
+  - `id:12` or `#025`
+  - Numeric filters like:
+    - `hp>=100`
+    - `speed<120`
+    - `bst>500`
+- Optional **“Keep search text when selecting”** toggle
+
+### 🔗 Clickable Evolution Chains
+Every evolution entry is clickable — select any stage instantly.
+
+### ⚔️ Fusion Results
+- Fused type
+- Combined stat block with Total BST
+- Differences vs. each base Pokémon
+- Active Ability (from Pokémon 2)
+- Passive Ability toggle (from Pokémon 1)
+- Hidden Ability awareness
+- Ability effect summaries when they alter defensive matchups
+
+### 🛡️ Damage Taken Overview
+A clean, easy‑to‑scan defensive chart:
+- Immunities, resistances, and weaknesses
+- Bold **Damage Taken:** header
+- A blank line separating the header from the list for readability
+
+### 🌀 Flip Stat Challenge Mode
+Instantly apply the Flip Stat Challenge ruleset to both base Pokémon and the fusion.
+
+### 🔄 Quick Utilities
+- **Swap** Pokémon 1 ↔ 2  
+- **Clear** all selections and searches  
+- **Fuse** instantly
+
+### 📚 Resource Shortcuts
+Accessible via the menu bar:
+- Pokémon Database
+- Type Calculator
+- PokéRogue Pokédex
+
+### 📝 Status Bar
+Displays:
+- Calculated fuse time (ms)
+- Current Active / Passive / Flip Stat toggle states
 
 ---
 
-## Key Features
-
-- **Filter-as-you-type search** for each side, with support for:
-  - `name:`, `type:`, `ability:`, `passive:`, `id:` / `#`
-  - Numeric filters: `hp|attack|defense|sp. atk|sp. def|speed|bst` with `>`, `<`, `>=`, `<=`, `=`
-  - Example: `hp>=100 speed<120 bst>500` 
-- **Sticky search option** (Options → *Keep search text when selecting*) so your search terms remain when you pick a Pokémon.
-- **Ability controls**:
-  - **Active Ability** drop-down (from Pokémon 2)
-  - **Passive Active** toggle (from Pokémon 1), centered in the options pane
-  - Defensive matchup effects shown when abilities meaningfully change the type chart (e.g., immunities or halved damage). 
-- **Flip Stat Challenge** (Challenges menu) to view stats under the in-game Flip Stat rule. 
-- **Clickable evolution line** in each side panel—jump to any stage with a click.
-- **Helpful resource links** in the menu (Pokémon Database, Type Calculator, PokéRogue Pokédex).
-- Lightweight status bar with fuse timing and current options summary.
-
----
-
-## Getting Started
+## 🚀 Installation
 
 ### Requirements
-- **Python 3.x**
-- The standard library’s **tkinter** module (ships with most CPython installers)
+- Python 3.x  
+- `tkinter` (bundled with most Python installations)
 
-### Installation
-1. Download **`fusioncalc.py`** and **`pokemon_data.csv`** into the **same directory**.
-2. Ensure Python can import `tkinter` on your system.
+### Setup
+1. Download:
+   - `fusioncalc.py`
+   - `pokemon_data.csv`
+2. Place both files in the **same directory**
+
+### Run
+```bash
+python fusioncalc_test.py
