@@ -1,137 +1,139 @@
-# BUILD_HASH: 9b3b78511020
+# BUILD_HASH: a2d607731a3f
 # COMPONENT_HASHES: generated below
-# func:_apply_stat_tabs 9a29fa7431d9
-# func:_apply_verbose_level bb4ecf0af2b1
-# func:_assert_and_raise_core_tags 9fe08391f941
-# func:_create_font_safely 398ece1efa51
-# func:_debug_dump_fonts 7f49c120a541
-# func:_get_or_build_fonts 4860ce51dce3
-# func:_normalize_ability 1c7a7724fa40
-# func:avg_round_tenth 8ef6f5f42397
-# func:calculate_fusion_stats 39d275f21861
-# func:calculate_type_effectiveness 8c031118335b
-# func:clear_selections 3f069087f18b
-# func:compute_fused_typing a7427936b4dc
-# func:copy_fusion_summary 918cd591c74d
-# func:dump_ui_layout_metrics 43c8d1f43b0a
-# func:dump_widget_font_tag_logs a50ef3ec4cef
-# func:ensure_display_vars 0857eed13da4
-# func:export_fusion_summary 7c2401116f57
-# func:fill_side_panel f17ef49e5178
-# func:filter_pokemon 78454d59f7dd
-# func:flip_stats_dict 460b17067f01
-# func:force_recalc_if_ready bc23e542f2a0
-# func:format_number_trim 7b309a3ecf99
-# func:format_type_effectiveness a674872fb7ad
-# func:get_fusion_summary_text 9941f3d42df2
-# func:init_display_vars d85025990191
-# func:insert_hr 4bc0202e2f9f
-# func:is_section_enabled 071f6caa3e26
-# func:load_pokemon_data_into 9d18188c2854
-# func:log_calc 598725b17bda
-# func:maybe_recalc_if_ready 37df99c070e9
-# func:on_click_evo 1dcc72ca3ab5
-# func:on_select 16be18f570bf
-# func:on_toggle_master_logs d9e3147a4bfc
-# func:on_toggle_verbose_logs 49c7f8873555
-# func:populate_active_abilities_for d20d7963320f
-# func:refresh_side_panels 74318b6777ef
-# func:show_display_options ac711efd1fb5
-# func:show_filter_help 8b749a070654
-# func:show_help_overview 35efb50041e6
-# func:swap_pokemon c9199725f2ea
-# func:write_stat_block 4f2c73c3ee0b
-# var:ABILITY_EFFECTS faed8b03afc6
-# var:BODY_FONT_DEF 698cb47bbb9d
-# var:BUILD_TAG e94fa45cb720
-# var:FLIP_MAP f96885de55dc
-# var:HEADING_FONT_DEF 7d340d838828
-# var:STR 49166c3d98fe
-# var:VALUE_FALLBACKS 7a31fe2b64d1
-# var:VALUE_FONT_DEF 14979e2e8cb0
-# var:VERBOSE_BOLD_LOGS 571dc47ec872
-# var:_FONT_CACHE 4161519fdcfb
-# var:active_ability_combo 218216d468f8
-# var:active_ability_label 222ed1ab7b7e
-# var:active_ability_var 2e46ae77e5c9
-# var:button_frame bef9aa8b0e0d
-# var:calc_logs_var cdb67949daf1
-# var:challenges_menu 2b670333483d
-# var:clear_button 329525153301
-# var:cmp 6997d6e1fc28
-# var:debounce_p1 eb045f340d74
-# var:debounce_p2 a1c9e27b5cee
-# var:display_vars 04483b25df5c
-# var:file_menu 2a18597ed626
-# var:flip_stat_var af0a61f09577
-# var:fusion_button 47c24be1d365
-# var:fusion_caption 2e5710fa0433
-# var:fusion_info ebbafe9854eb
-# var:help_menu f664511ac903
-# var:logs_master_var 20a6fdadf9b9
-# var:main_frame 6dde4530f50d
-# var:menubar e7ab3216918d
-# var:open_pokedex d919e8f0413e
-# var:open_pokemondb 908f1880e6f1
-# var:open_type_calculator 7b91f4a84e48
-# var:options_frame 06ad1553b367
-# var:passive_active_var ad6cca2a6f8e
-# var:pokemon1_entry 8582f24ef09c
-# var:pokemon1_filter_var 62a2a576e171
-# var:pokemon1_filtered_label 73d3080d75cc
-# var:pokemon1_filtered_listbox 9a5725af55d6
-# var:pokemon1_id a7da934cb299
-# var:pokemon1_info b15a9f26345d
-# var:pokemon1_label d2b6595a78aa
-# var:pokemon1_name 504e057a5175
-# var:pokemon1_var fb6d668ddcb3
-# var:pokemon2_entry 9d7860e5e45b
-# var:pokemon2_filter_var 4a589b344fc9
-# var:pokemon2_filtered_label 4fa91533a60b
-# var:pokemon2_filtered_listbox e6648380edf9
-# var:pokemon2_id 34b652ac406a
-# var:pokemon2_info 0812c7c48188
-# var:pokemon2_label 8486280f39cb
-# var:pokemon2_name 3d6ddd69a325
-# var:pokemon2_var 9c0d4455e3e6
-# var:quick_compare_target_var fb0e45a8b83b
-# var:resources_menu 7eaa2e616c48
-# var:root 27de8c09d3ea
-# var:show_status_bar_var 690f21b5fdd5
-# var:status_bar a746e1e7c86d
-# var:status_text 0f87707cbd4a
-# var:sticky_filters_var 7c7ddeb12191
-# var:swap_button 53687cb572b3
-# var:type_effectiveness 50d6f9b7f2a3
-# var:ui_layout_logs_var 22b5a60ebc99
-# var:verbose_logs_var 4a0598f588da
-# var:view_menu dcb1e7e38a3b
-# var:widget_font_tag_logs_var 8815009bf594
-# menu:add_cascade|label=Challenges|variable=None|command=None 0e58dabb963a
-# menu:add_cascade|label=Compare vs|variable=None|command=None 81c71c5cbeee
-# menu:add_cascade|label=File|variable=None|command=None 96da5bc9e176
-# menu:add_cascade|label=Help|variable=None|command=None 20eb3bfb2ee0
-# menu:add_cascade|label=Resources|variable=None|command=None 936d095dd9b6
-# menu:add_cascade|label=View|variable=None|command=None 52c2ea1967d0
-# menu:add_checkbutton|label=Flip Stat Challenge|variable=flip_stat_var|command=<lambda> 0414094de4d8
-# menu:add_checkbutton|label=Logging (Master)|variable=logs_master_var|command=on_toggle_master_logs ca045b299362
-# menu:add_checkbutton|label=Passive Active|variable=passive_active_var|command=None 02ad3c47be13
-# menu:add_checkbutton|label=Quick Compare|variable=None|command=None 8b1d39bbb6ae
-# menu:add_checkbutton|label=Show Calculation Logs|variable=calc_logs_var|command=None 835dc6c452ec
-# menu:add_checkbutton|label=Show UI Layout Logs|variable=ui_layout_logs_var|command=dump_ui_layout_metrics df236cf0bb57
-# menu:add_checkbutton|label=Show Widget Font/Tag Logs|variable=widget_font_tag_logs_var|command=dump_widget_font_tag_logs 71897ba5b2b2
-# menu:add_checkbutton|label=Verbose Logs|variable=verbose_logs_var|command=<lambda> 9053b230cc66
-# menu:add_command|label=Display Options…|variable=None|command=show_display_options df6dbb2cee59
-# menu:add_command|label=Exit|variable=None|command=None bf174b8534bb
-# menu:add_command|label=PokeRogue Pokedex|variable=None|command=open_pokedex 9e484a37eddd
-# menu:add_command|label=Pokémon Database|variable=None|command=open_pokemondb 1bef5fe7b9f1
-# menu:add_command|label=STR['copy_fusion_summary']|variable=None|command=copy_fusion_summary ec2f89f79c61
-# menu:add_command|label=STR['export_fusion_summary']|variable=None|command=export_fusion_summary af3ec6c082f2
-# menu:add_command|label=Search Filters…|variable=None|command=show_filter_help 266f46b1ebf4
-# menu:add_command|label=Toolbar Overview…|variable=None|command=show_help_overview 498ca1acc070
-# menu:add_command|label=Type Calculator|variable=None|command=open_type_calculator b12488b899ce
-# menu:add_radiobutton|label=Compare vs Pokémon 1|variable=quick_compare_target_var|command=None 07d9a38acdbb
-# menu:add_radiobutton|label=Compare vs Pokémon 2|variable=quick_compare_target_var|command=None 17639e187f53
+# func:_apply_stat_tabs 4d7cc73fe8e2
+# func:_apply_verbose_level d78539607591
+# func:_assert_and_raise_core_tags d7802f5eef7d
+# func:_create_font_safely e32d87082fff
+# func:_debug_dump_fonts f17715f09cfb
+# func:_get_or_build_fonts 19392cab0cdc
+# func:_normalize_ability b53d32db1e7d
+# func:avg_round_tenth 3b313ed55d3a
+# func:calculate_fusion_stats 8adb6e54a807
+# func:calculate_type_effectiveness 37765e760289
+# func:clear_selections 518360570169
+# func:compute_fused_typing b88e848a79fc
+# func:copy_fusion_summary 991ed0f3fc63
+# func:dump_ui_layout_metrics b6669a7db5a4
+# func:dump_widget_font_tag_logs a98127722c00
+# func:ensure_display_vars 93f15e07aa18
+# func:export_fusion_summary 386ce70bdb5f
+# func:fill_side_panel 5f465088fe3a
+# func:filter_pokemon de3d8617590a
+# func:flip_stats_dict 963ad255f1c6
+# func:force_recalc_if_ready f4aad93a2eee
+# func:format_number_trim fbce322686c0
+# func:format_type_effectiveness 69bed27f6233
+# func:get_fusion_summary_text ef2911bc8444
+# func:init_display_vars 2ab9bf88373e
+# func:insert_hr ee1ff40eb496
+# func:is_section_enabled 07d65c1d00a7
+# func:load_pokemon_data_into 4f162c9f2dcf
+# func:log_calc 4305c65f7bf0
+# func:maybe_recalc_if_ready 7c00e054bb92
+# func:on_click_evo 604c79dd8a7c
+# func:on_select 6c00ae1dbb52
+# func:on_toggle_master_logs d84d829710a8
+# func:on_toggle_verbose_logs 7d5c55c6259b
+# func:populate_active_abilities_for 9d99895a805d
+# func:refresh_side_panels b63dc44d43a5
+# func:show_display_options 97cfe0a1ab06
+# func:show_filter_help 7ab8b37d9bed
+# func:show_help_overview ae16094ba132
+# func:swap_pokemon ce9ef87adce7
+# func:write_stat_block e18ac4173e2c
+# var:ABILITY_EFFECTS 992e8bfc72a0
+# var:BODY_FONT_DEF 833283865552
+# var:BUILD_TAG 47488da15e27
+# var:FLIP_MAP e4c1d5f0264e
+# var:HEADING_FONT_DEF 865918ad7935
+# var:STR 5c0138f24005
+# var:VALUE_FALLBACKS 84c3890be910
+# var:VALUE_FONT_DEF 6f117f5aef05
+# var:VERBOSE_BOLD_LOGS 3ba8b1ec0052
+# var:_FONT_CACHE 16f0c8b064ed
+# var:active_ability_combo aaf463791378
+# var:active_ability_label fc977f6844c5
+# var:active_ability_var 16e9e852686c
+# var:button_frame b6fb89879dad
+# var:calc_logs_var 077e4fd38ed3
+# var:challenges_menu 13f3907f8189
+# var:clear_button 367af89bae37
+# var:cmp ba6c06e4be30
+# var:debounce_p1 63a912c1afd9
+# var:debounce_p2 ef44027d22f3
+# var:display_vars 4dd36529249d
+# var:file_menu 4d257918413b
+# var:flip_stat_var 64c6a6c458bf
+# var:fusion_button 70ffa3a326dc
+# var:fusion_caption d2032b0c2deb
+# var:fusion_info f115b30463c3
+# var:help_menu 7e582c710007
+# var:logs_master_var b5d96b17f65b
+# var:main_frame f4984fef3b32
+# var:menubar b87313ea43ef
+# var:open_pokedex 4d606fac7e15
+# var:open_pokemondb 2c102a4fa66d
+# var:open_type_calculator 97d74b36b2cb
+# var:options_frame 9970bf883938
+# var:passive_active_var bff591210b04
+# var:pokemon1_entry 206efdf9dc3d
+# var:pokemon1_filter_var 1fad21fe3622
+# var:pokemon1_filtered_label bd2349e4f869
+# var:pokemon1_filtered_listbox 09f3fdcc7ce2
+# var:pokemon1_id 01355cb18f0c
+# var:pokemon1_info 20789104a008
+# var:pokemon1_label 2100c159de86
+# var:pokemon1_name 482394876713
+# var:pokemon1_var 1854979995ee
+# var:pokemon2_entry 9817b1a1fb59
+# var:pokemon2_filter_var dc4e533aeba0
+# var:pokemon2_filtered_label 65a3c5e8cfcf
+# var:pokemon2_filtered_listbox 938966e3b062
+# var:pokemon2_id 2abd16581966
+# var:pokemon2_info 802d19b7710f
+# var:pokemon2_label ff22dd70ca18
+# var:pokemon2_name 3e4e0ea5a375
+# var:pokemon2_var f2cce24ec581
+# var:pokemon_stats a9fa43c0d947
+# var:quick_compare_target_var 1e332a206292
+# var:resources_menu 77a902e2c068
+# var:root dc76e9f0c000
+# var:show_status_bar_var 14921e9d9e3a
+# var:status_bar fd1c1ffe7cd8
+# var:status_text c4d5b524c872
+# var:sticky_filters_var 4efd9beb6857
+# var:swap_button 8dfc90b6b882
+# var:type_effectiveness b9d157528539
+# var:ui_layout_logs_var b3eb266bd8dd
+# var:verbose_logs_var 15f36e68aea5
+# var:view_menu a69c705fdced
+# var:widget_font_tag_logs_var e7baf8ea7af7
+# menu:add_cascade\nlabel=File\nvariable=None\ncommand=None 2c3f57998825
+# menu:add_command\nlabel=STR['copy_fusion_summary']\nvariable=None\ncommand=copy_fusion_summary e7d31674bd03
+# menu:add_command\nlabel=STR['export_fusion_summary']\nvariable=None\ncommand=export_fusion_summary 5d926ad03b80
+# menu:add_command\nlabel=Exit\nvariable=None\ncommand=None 43d978716cae
+# menu:add_cascade\nlabel=Challenges\nvariable=None\ncommand=None ca70a752065a
+# menu:add_cascade\nlabel=Resources\nvariable=None\ncommand=None a81f6c33bfb1
+# menu:add_command\nlabel=Pokémon Database\nvariable=None\ncommand=open_pokemondb e130777d8157
+# menu:add_command\nlabel=Type Calculator\nvariable=None\ncommand=open_type_calculator cf7fb0f71730
+# menu:add_command\nlabel=PokeRogue Pokedex\nvariable=None\ncommand=open_pokedex 358343cd21c7
+# menu:add_cascade\nlabel=Help\nvariable=None\ncommand=None 2c2c9e3ee952
+# menu:add_cascade\nlabel=View\nvariable=None\ncommand=None 472d0dd058f7
+# menu:add_checkbutton\nlabel=Logging (Master)\nvariable=logs_master_var\ncommand=on_toggle_master_logs ede2f9a5c3a6
+# menu:add_checkbutton\nlabel=Verbose Logs\nvariable=verbose_logs_var\ncommand=<lambda> a686f119469c
+# menu:add_checkbutton\nlabel=Show Calculation Logs\nvariable=calc_logs_var\ncommand=None 1ec3ed94d48f
+# menu:add_checkbutton\nlabel=Show UI Layout Logs\nvariable=ui_layout_logs_var\ncommand=dump_ui_layout_metrics 156fabe7c3ba
+# menu:add_checkbutton\nlabel=Show Widget Font/Tag Logs\nvariable=widget_font_tag_logs_var\ncommand=dump_widget_font_tag_logs 1c1f6b7d794d
+# menu:add_command\nlabel=Toolbar Overview…\nvariable=None\ncommand=show_help_overview 2c02405f9ad4
+# menu:add_command\nlabel=Search Filters…\nvariable=None\ncommand=show_filter_help e50902c3e6a2
+# menu:add_command\nlabel=Display Options…\nvariable=None\ncommand=show_display_options 4c6cb886f5c0
+# menu:add_checkbutton\nlabel=Quick Compare\nvariable=None\ncommand=<lambda> 5802f0cbae61
+# menu:add_radiobutton\nlabel=Compare vs Pokémon 1\nvariable=quick_compare_target_var\ncommand=<lambda> 330ef3e229bf
+# menu:add_radiobutton\nlabel=Compare vs Pokémon 2\nvariable=quick_compare_target_var\ncommand=<lambda> f6338f77d50d
+# menu:add_cascade\nlabel=Compare vs\nvariable=None\ncommand=None d59ee0469e3c
+# menu:add_checkbutton\nlabel=Passive Active\nvariable=passive_active_var\ncommand=<lambda> 51dd7a5c4b9d
+# menu:add_checkbutton\nlabel=Show Status Bar\nvariable=show_status_bar_var\ncommand=<lambda> c9756fc49b12
+# menu:add_checkbutton\nlabel=Flip Stat Challenge\nvariable=flip_stat_var\ncommand=<lambda> 7695de191ccc
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import csv
@@ -257,7 +259,7 @@ def on_toggle_verbose_logs():
 # \ Phase 1.2b configuration /
 # =============================
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
-BUILD_TAG = "9b3b78511020"
+BUILD_TAG = "a2d607731a3f"
 
 # Fonts
 HEADING_FONT_DEF = ("Arial", 11, "bold")   # headings
@@ -984,7 +986,7 @@ def show_display_options():
             _assert_and_raise_core_tags(pokemon1_info); _assert_and_raise_core_tags(pokemon2_info); _assert_and_raise_core_tags(fusion_info)
         except Exception: pass
         try:
-            refresh_side_panels(); _assert_and_raise_core_tags(pokemon1_info); _assert_and_raise_core_tags(pokemon2_info); _assert_and_raise_core_tags(fusion_info)
+            refresh_side_panels(); force_recalc_if_ready(); _assert_and_raise_core_tags(pokemon1_info); _assert_and_raise_core_tags(pokemon2_info); _assert_and_raise_core_tags(fusion_info)
         except Exception as e:
             logging.debug(f"[DisplayOptions] refresh error: {e}")
 
@@ -1210,19 +1212,21 @@ help_menu.add_command(label='Search Filters…', command=show_filter_help)
 # Populate View menu
 view_menu.add_command(label='Display Options…', command=show_display_options, accelerator='Ctrl+Shift+D')
 view_menu.add_separator()
-view_menu.add_checkbutton(label='Quick Compare', variable=display_vars['fusion']['quick_compare'], onvalue=True, offvalue=False)
+view_menu.add_checkbutton(label='Quick Compare', variable=display_vars['fusion']['quick_compare'], onvalue=True, offvalue=False, command=lambda: force_recalc_if_ready())
 cmp = tk.Menu(view_menu, tearoff=0)
-cmp.add_radiobutton(label='Compare vs Pokémon 1', variable=quick_compare_target_var, value='p1')
-cmp.add_radiobutton(label='Compare vs Pokémon 2', variable=quick_compare_target_var, value='p2')
+cmp.add_radiobutton(label='Compare vs Pokémon 1', variable=quick_compare_target_var, value='p1', command=lambda: force_recalc_if_ready())
+cmp.add_radiobutton(label='Compare vs Pokémon 2', variable=quick_compare_target_var, value='p2', command=lambda: force_recalc_if_ready())
 view_menu.add_cascade(label='Compare vs', menu=cmp)
 view_menu.add_separator()
-view_menu.add_checkbutton(label='Passive Active', variable=passive_active_var, onvalue=True, offvalue=False)
+view_menu.add_checkbutton(label='Passive Active', variable=passive_active_var, onvalue=True, offvalue=False, command=lambda: force_recalc_if_ready())
 view_menu.add_separator()
-
-# Verbose Logs + Calculation Logs wiring
+# Status bar toggle wiring (normalized)
+view_menu.add_checkbutton(label='Show Status Bar', variable=show_status_bar_var, onvalue=True, offvalue=False, command=lambda: (status_bar.pack(side=tk.BOTTOM, fill=tk.X) if show_status_bar_var.get() else status_bar.pack_forget()))
+# Initialize Master gating once at startup
+on_toggle_master_logs()
 
 # Challenges — Flip Stat
-challenges_menu.add_checkbutton(label='Flip Stat Challenge', variable=flip_stat_var, onvalue=True, offvalue=False, command=lambda: (refresh_side_panels()))
+challenges_menu.add_checkbutton(label='Flip Stat Challenge', variable=flip_stat_var, onvalue=True, offvalue=False, command=lambda: (refresh_side_panels(), force_recalc_if_ready()))
 
 # Main layout
 main_frame = ttk.Frame(root); main_frame.pack(fill=tk.BOTH, expand=True, padx=10)
