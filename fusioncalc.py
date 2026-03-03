@@ -1,139 +1,6 @@
-# BUILD_HASH: 98749faa04f6
-# COMPONENT_HASHES: generated below
-# func:_apply_stat_tabs 4d7cc73fe8e2
-# func:_apply_verbose_level d78539607591
-# func:_assert_and_raise_core_tags d7802f5eef7d
-# func:_create_font_safely e32d87082fff
-# func:_debug_dump_fonts f17715f09cfb
-# func:_get_or_build_fonts 19392cab0cdc
-# func:_normalize_ability b53d32db1e7d
-# func:avg_round_tenth 3b313ed55d3a
-# func:calculate_fusion_stats 086d91a09e47
-# func:calculate_type_effectiveness 37765e760289
-# func:clear_selections 518360570169
-# func:compute_fused_typing b88e848a79fc
-# func:copy_fusion_summary 991ed0f3fc63
-# func:dump_ui_layout_metrics b6669a7db5a4
-# func:dump_widget_font_tag_logs a98127722c00
-# func:ensure_display_vars 93f15e07aa18
-# func:export_fusion_summary 386ce70bdb5f
-# func:fill_side_panel e2b94d43f25e
-# func:filter_pokemon de3d8617590a
-# func:flip_stats_dict 963ad255f1c6
-# func:force_recalc_if_ready f4aad93a2eee
-# func:format_number_trim fbce322686c0
-# func:format_type_effectiveness 69bed27f6233
-# func:get_fusion_summary_text ef2911bc8444
-# func:init_display_vars 2ab9bf88373e
-# func:insert_hr ee1ff40eb496
-# func:is_section_enabled 07d65c1d00a7
-# func:load_pokemon_data_into 4f162c9f2dcf
-# func:log_calc 4305c65f7bf0
-# func:maybe_recalc_if_ready 7c00e054bb92
-# func:on_click_evo 604c79dd8a7c
-# func:on_select 6c00ae1dbb52
-# func:on_toggle_master_logs d84d829710a8
-# func:on_toggle_verbose_logs 7d5c55c6259b
-# func:populate_active_abilities_for 9d99895a805d
-# func:refresh_side_panels b63dc44d43a5
-# func:show_display_options 846958954211
-# func:show_filter_help 7ab8b37d9bed
-# func:show_help_overview ae16094ba132
-# func:swap_pokemon ce9ef87adce7
-# func:write_stat_block e18ac4173e2c
-# var:ABILITY_EFFECTS c2f518303cb4
-# var:BODY_FONT_DEF a940f42894ff
-# var:BUILD_TAG 2680a87e2211
-# var:FLIP_MAP b07fd82b0e2c
-# var:HEADING_FONT_DEF 54ff7571512f
-# var:STR 41bbfd4a892d
-# var:VALUE_FALLBACKS 2a03be519dab
-# var:VALUE_FONT_DEF b4d618398ebb
-# var:VERBOSE_BOLD_LOGS 4b33e3151c7c
-# var:_FONT_CACHE 38c252c7064a
-# var:active_ability_combo 3750aba97f07
-# var:active_ability_label 780322a6fb69
-# var:active_ability_var 04d7145ed548
-# var:button_frame bde5ddaf5163
-# var:calc_logs_var 9045b36ee0e1
-# var:challenges_menu 23ebb8038ac1
-# var:clear_button 628e0b71238d
-# var:cmp 9d3f57bb1ea6
-# var:debounce_p1 f95c176e5d6f
-# var:debounce_p2 f95c176e5d6f
-# var:display_vars e5298ccc32d7
-# var:file_menu 0246a4df2bbe
-# var:flip_stat_var 01c0f45da19a
-# var:fusion_button fdd9e36307f3
-# var:fusion_caption 50b01be53a27
-# var:fusion_info 4b411115df73
-# var:help_menu 06d88012d3c9
-# var:logs_master_var 30debee6c8c7
-# var:main_frame 8e205137c76d
-# var:menubar 55044ece8240
-# var:open_pokedex 7a70c09c7398
-# var:open_pokemondb fe40c97c8c27
-# var:open_type_calculator cb80fa4fd1ad
-# var:options_frame 7a7c5de4ad96
-# var:passive_active_var 9592142fd15e
-# var:pokemon1_entry 9bbfa28a5208
-# var:pokemon1_filter_var 620247e779ff
-# var:pokemon1_filtered_label e9ea11f1f39f
-# var:pokemon1_filtered_listbox 01e53ca8a2a3
-# var:pokemon1_id b1ec98910b94
-# var:pokemon1_info 82a7cf3fa920
-# var:pokemon1_label 52b8c55a5551
-# var:pokemon1_name 6f79735b2b80
-# var:pokemon1_var 620247e779ff
-# var:pokemon2_entry 87b70a90c4e3
-# var:pokemon2_filter_var 685d3c480748
-# var:pokemon2_filtered_label 4cbf39430b10
-# var:pokemon2_filtered_listbox cf0505c9cb2f
-# var:pokemon2_id efd0036123ab
-# var:pokemon2_info e4afb686dfdc
-# var:pokemon2_label 45e75fc5186b
-# var:pokemon2_name 284c0f16a644
-# var:pokemon2_var 685d3c480748
-# var:pokemon_stats ef67bd3a0106
-# var:quick_compare_target_var 632c2e74d537
-# var:resources_menu f0646eee7401
-# var:root 58e22ff3f0b6
-# var:show_status_bar_var e348925d3356
-# var:status_bar a2cd118bf010
-# var:status_text f016bc45f3f0
-# var:sticky_filters_var b603d1da3cc9
-# var:swap_button a3c2ca26c100
-# var:type_effectiveness b31ec6f1a10a
-# var:ui_layout_logs_var 4857b211b86e
-# var:verbose_logs_var e474f948013f
-# var:view_menu dc8cb7c69648
-# var:widget_font_tag_logs_var 2583a8627269
-# menu:add_cascade\nlabel='Challenges'\nvariable=None\ncommand=None f6079550e940
-# menu:add_cascade\nlabel='Compare vs'\nvariable=None\ncommand=None 783b9a9ab12a
-# menu:add_cascade\nlabel='File'\nvariable=None\ncommand=None a77be444c033
-# menu:add_cascade\nlabel='Help'\nvariable=None\ncommand=None ab0690b6d0ca
-# menu:add_cascade\nlabel='Resources'\nvariable=None\ncommand=None 9c85eea4fe2a
-# menu:add_cascade\nlabel='View'\nvariable=None\ncommand=None c09c8a0d52f5
-# menu:add_checkbutton\nlabel='Flip Stat Challenge'\nvariable=flip_stat_var\ncommand=lambda: (refresh_side_panels( 8eae6ec88e26
-# menu:add_checkbutton\nlabel='Logging (Master\nvariable=None\ncommand=None 591e4124eb41
-# menu:add_checkbutton\nlabel='Passive Active'\nvariable=passive_active_var\ncommand=lambda: force_recalc_if_ready( e865d24971a9
-# menu:add_checkbutton\nlabel='Quick Compare'\nvariable=display_vars['fusion']['quick_compare']\ncommand=lambda: force_recalc_if_ready( 2d549adcef30
-# menu:add_checkbutton\nlabel='Show Calculation Logs'\nvariable=calc_logs_var\ncommand=None d2a1e3efccf4
-# menu:add_checkbutton\nlabel='Show Status Bar'\nvariable=show_status_bar_var\ncommand=lambda: (status_bar.pack(side=tk.BOTTOM 8846e10f056c
-# menu:add_checkbutton\nlabel='Show UI Layout Logs'\nvariable=ui_layout_logs_var\ncommand=dump_ui_layout_metrics 08bc58c15165
-# menu:add_checkbutton\nlabel='Show Widget Font/Tag Logs'\nvariable=widget_font_tag_logs_var\ncommand=dump_widget_font_tag_logs 3d9d4cc49969
-# menu:add_checkbutton\nlabel='Verbose Logs'\nvariable=verbose_logs_var\ncommand=lambda: on_toggle_verbose_logs( e0fc0914a86c
-# menu:add_command\nlabel='Display Options…'\nvariable=None\ncommand=show_display_options a700151c9ef7
-# menu:add_command\nlabel='Exit'\nvariable=None\ncommand=root.quit bcf0c547c9de
-# menu:add_command\nlabel='PokeRogue Pokedex'\nvariable=None\ncommand=open_pokedex cf88ca19b4cf
-# menu:add_command\nlabel='Pokémon Database'\nvariable=None\ncommand=open_pokemondb 11e8359afa75
-# menu:add_command\nlabel='Search Filters…'\nvariable=None\ncommand=show_filter_help 8609eddfdf28
-# menu:add_command\nlabel='Toolbar Overview…'\nvariable=None\ncommand=show_help_overview 1ca1afdd86eb
-# menu:add_command\nlabel='Type Calculator'\nvariable=None\ncommand=open_type_calculator 4c276f181ce3
-# menu:add_command\nlabel=STR['copy_fusion_summary']\nvariable=None\ncommand=copy_fusion_summary 039047495694
-# menu:add_command\nlabel=STR['export_fusion_summary']\nvariable=None\ncommand=export_fusion_summary 8ad4ac31784d
-# menu:add_radiobutton\nlabel='Compare vs Pokémon 1'\nvariable=quick_compare_target_var\ncommand=lambda: force_recalc_if_ready( fcbf07f9d1d5
-# menu:add_radiobutton\nlabel='Compare vs Pokémon 2'\nvariable=quick_compare_target_var\ncommand=lambda: force_recalc_if_ready( 15030d9315f6
+# BUILD_HASH: 70a1d2617d2b
+
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import csv
@@ -254,13 +121,9 @@ def on_toggle_verbose_logs():
     except Exception:
         pass
 
-
-# =============================
-# \ Phase 1.2b configuration /
-# =============================
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
-BUILD_TAG = "98749faa04f6"
-
+AUTO_RECALC_ON_SELECT = False
+BUILD_TAG = "70a1d2617d2b"
 # Fonts
 HEADING_FONT_DEF = ("Arial", 11, "bold")   # headings
 BODY_FONT_DEF    = ("Arial", 10)            # non-numeric body
@@ -270,9 +133,48 @@ VALUE_FALLBACKS  = [("Courier New", 11), ("TkFixedFont", 11)]
 # Logging (runtime adjustable)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
-# =============================
-# \ i18n strings /
-# =============================
+# Startup defaults (script-only)
+DEFAULTS = {
+    'view': {
+        'logs_master': True,
+        'verbose_logs': False,
+        'show_calc_logs': True,
+        'show_status_bar': True,
+        'quick_compare_target': 'p2',
+        'passive_active': True,
+        'flip_stat_challenge': False,
+    },
+    'display': {
+        'p1': { 'type': True, 'abilities': True, 'hidden_ability': True, 'passive': True, 'bst': True, 'evolution': True, 'damage': True },
+        'p2': { 'type': True, 'abilities': True, 'hidden_ability': True, 'passive': True, 'bst': True, 'evolution': True, 'damage': True },
+        'fusion': { 'fused_type': True, 'bst': True, 'diffs': True, 'abilities': True, 'ability_effects': True, 'damage': True, 'quick_compare': True },
+    },
+}
+
+def apply_defaults():
+    try:
+        if 'logs_master_var' in globals(): logs_master_var.set(bool(DEFAULTS['view']['logs_master']))
+        if 'verbose_logs_var' in globals(): verbose_logs_var.set(bool(DEFAULTS['view']['verbose_logs']))
+        if 'calc_logs_var' in globals(): calc_logs_var.set(bool(DEFAULTS['view']['show_calc_logs']))
+        if 'show_status_bar_var' in globals(): show_status_bar_var.set(bool(DEFAULTS['view']['show_status_bar']))
+        if 'quick_compare_target_var' in globals(): quick_compare_target_var.set(str(DEFAULTS['view']['quick_compare_target']))
+        if 'passive_active_var' in globals(): passive_active_var.set(bool(DEFAULTS['view']['passive_active']))
+        if 'flip_stat_var' in globals(): flip_stat_var.set(bool(DEFAULTS['view']['flip_stat_challenge']))
+        try:
+            display_vars
+        except NameError:
+            pass
+        ensure_display_vars()
+        for panel, mapping in DEFAULTS['display'].items():
+            for key, val in mapping.items():
+                try:
+                    display_vars[panel][key].set(bool(val))
+                except Exception:
+                    pass
+    except Exception as e:
+        try: logging.debug(f"[Defaults] apply failed: {e}")
+        except Exception: pass
+# Internationalization (static strings)
 STR = {
     'display_options_title': 'Display Options',
     'section': 'Section',
@@ -317,10 +219,7 @@ STR = {
     'ready': 'Ready.',
     'pokemon_not_found': 'Pokémon not found.',
 }
-
-# ================
-# \ Data loading /
-# ================
+# Data loading
 pokemon_stats: Dict[str, Dict[str, Any]] = {}
 
 def load_pokemon_data_into(pstore: Dict[str, Dict[str, Any]]) -> int:
@@ -393,11 +292,7 @@ def load_pokemon_data_into(pstore: Dict[str, Dict[str, Any]]) -> int:
 open_pokemondb = lambda: webbrowser.open("https://pokemondb.net/")
 open_type_calculator = lambda: webbrowser.open("https://www.pkmn.help/defense/")
 open_pokedex = lambda: webbrowser.open("https://wiki.pokerogue.net/dex:pokedex")
-
-# =====================
-# \ Export utilities /
-# =====================
-
+# Export utilities
 def get_fusion_summary_text() -> str:
     try:
         return (fusion_info.get('1.0', tk.END) or '').strip()
@@ -433,21 +328,14 @@ def export_fusion_summary():
         except Exception: pass
     except Exception as e:
         logging.error('[Export] save failed: %s' % e, exc_info=True)
-
-# ==============
-# \ Utilities /
-# ==============
-
+# Utility helpers
 def avg_round_tenth(a: float, b: float) -> float: return round((float(a) + float(b)) / 2.0, 1)
 
 def format_number_trim(x) -> str:
     try: fx = float(x)
     except Exception: return str(x)
     return f"{fx:.1f}".rstrip('0').rstrip('.')
-
-# ==============================
-# \ Font/tag helpers (hardened)/
-# ==============================
+# Text widget font/tag helpers
 _FONT_CACHE = {}
 
 def _create_font_safely(family, size, weight='normal', slant='roman'):
@@ -534,9 +422,7 @@ def _apply_stat_tabs(text: tk.Text, items):
     max_label_pixels = max((fnt.measure(lbl + ' ') for lbl in labels), default=120)
     text.tag_config('stat_tabs', tabs=(max_label_pixels + 2, 'right'))
 
-# =============================
 # \ Ability rule mapping (UI) /
-# =============================
 ABILITY_EFFECTS = {
     'LEVITATE': {'immunities': ['Ground']},
     'EARTH EATER': {'immunities': ['Ground']},
@@ -556,9 +442,7 @@ ABILITY_EFFECTS = {
     'WATER BUBBLE': {'halve': ['Fire']},
 }
 
-# ============================
 # \ Display options (stateless)/
-# ============================
 
 def init_display_vars():
     vars = {
@@ -577,17 +461,12 @@ def ensure_display_vars():
     except NameError:
         display_vars = init_display_vars()
 
-
 def is_section_enabled(panel: str, key: str) -> bool:
     try:
         return bool(display_vars[panel][key].get())
     except Exception:
         return True
-
-# =============================
-# \ Panels & writers /
-# =============================
-
+# Panels & writers
 def write_stat_block(text: tk.Text, items):
     _assert_and_raise_core_tags(text)
     _apply_stat_tabs(text, items)
@@ -595,7 +474,6 @@ def write_stat_block(text: tk.Text, items):
         val = format_number_trim(value)
         text.insert(tk.END, f"{label}:", 'stat_label'); text.insert(tk.END, "\t"); text.insert(tk.END, f"{val}\n", ('stat_value', 'stat_tabs'))
     _assert_and_raise_core_tags(text)
-
 
 def insert_hr(text: tk.Text, width_chars: int = 24):
     _assert_and_raise_core_tags(text)
@@ -615,119 +493,71 @@ def flip_stats_dict(stats_like: dict) -> dict:
 # Side panel renderer
 
 def fill_side_panel(name: str, info_text: tk.Text, id_label: tk.Label, name_label: tk.Label):
-    if not name or name not in pokemon_stats:
-        return
+    if not name or name not in pokemon_stats: return
     name_label.config(text=name)
     stats = pokemon_stats[name]
     t1, t2 = stats['Type_1'], stats['Type_2']
     ptype = t1 if (not t2 or t2 == t1) else f"{t1}/{t2}"
+
     info_text.delete('1.0', tk.END)
-    try:
-        info_text.configure(font=BODY_FONT_DEF)
-    except Exception:
-        pass
+    try: info_text.configure(font=BODY_FONT_DEF)
+    except Exception: pass
     _assert_and_raise_core_tags(info_text)
 
     panel_key = 'p1' if info_text is pokemon1_info else 'p2'
 
-    # Type (always present when enabled)
     if is_section_enabled(panel_key, 'type'):
-        info_text.insert(tk.END, STR['type'] + ': ', 'strong_label')
-        info_text.insert(tk.END, f"{ptype}\n\n")
+        info_text.insert(tk.END, STR['type'] + ': ', 'strong_label'); info_text.insert(tk.END, f"{ptype}\n\n")
 
     abilities = list(dict.fromkeys(stats.get('Abilities', [])))
     hidden_ability = abilities[1] if len(abilities) > 1 else ''
     visible_abilities = [a for i, a in enumerate(abilities) if i != 1] if abilities else []
 
-    # Abilities (placeholder when none)
-    if is_section_enabled(panel_key, 'abilities'):
-        if visible_abilities:
-            info_text.insert(tk.END, STR['abilities'] + ': ', 'strong_label')
-            info_text.insert(tk.END, f"{', '.join(visible_abilities)}\n")
-        else:
-            info_text.insert(tk.END, STR['abilities'] + ': ', 'strong_label')
-            info_text.insert(tk.END, '—\n')
-            log_calc(f"[Display] {panel_key} abilities: none available")
+    if is_section_enabled(panel_key, 'abilities') and visible_abilities:
+        info_text.insert(tk.END, STR['abilities'] + ': ', 'strong_label'); info_text.insert(tk.END, f"{', '.join(visible_abilities)}\n")
+    if is_section_enabled(panel_key, 'hidden_ability') and hidden_ability:
+        info_text.insert(tk.END, STR['hidden_ability_label'], 'strong_label'); info_text.insert(tk.END, f"{hidden_ability}\n")
+    if is_section_enabled(panel_key, 'passive') and stats.get('Passive'):
+        info_text.insert(tk.END, STR['passive'] + ': ', 'strong_label'); info_text.insert(tk.END, f"{stats['Passive']}\n")
 
-    # Hidden ability (placeholder when none)
-    if is_section_enabled(panel_key, 'hidden_ability'):
-        if hidden_ability:
-            info_text.insert(tk.END, STR['hidden_ability_label'], 'strong_label')
-            info_text.insert(tk.END, f"{hidden_ability}\n")
-        else:
-            info_text.insert(tk.END, STR['hidden_ability_label'], 'strong_label')
-            info_text.insert(tk.END, '—\n')
-            log_calc(f"[Display] {panel_key} hidden ability: none")
-
-    # Passive (placeholder when none)
-    if is_section_enabled(panel_key, 'passive'):
-        if stats.get('Passive'):
-            info_text.insert(tk.END, STR['passive'] + ': ', 'strong_label')
-            info_text.insert(tk.END, f"{stats['Passive']}\n")
-        else:
-            info_text.insert(tk.END, STR['passive'] + ': ', 'strong_label')
-            info_text.insert(tk.END, '—\n')
-            log_calc(f"[Display] {panel_key} passive: none")
-
-    # Spacer if any of the above printed lines
-    if (
-        (is_section_enabled(panel_key, 'abilities')) or
-        (is_section_enabled(panel_key, 'hidden_ability')) or
-        (is_section_enabled(panel_key, 'passive') and True)
-    ):
+    if ((is_section_enabled(panel_key, 'abilities') and visible_abilities) or
+        (is_section_enabled(panel_key, 'hidden_ability') and hidden_ability) or
+        (is_section_enabled(panel_key, 'passive') and stats.get('Passive'))):
         info_text.insert(tk.END, "\n")
 
-    # BST block
     if is_section_enabled(panel_key, 'bst'):
-        info_text.insert(tk.END, STR['bst_label'], 'strong_label')
-        info_text.insert(tk.END, "\n")
+        info_text.insert(tk.END, STR['bst_label'], 'strong_label'); info_text.insert(tk.END, "\n")
         insert_hr(info_text)
-        orig = {
-            'HP': stats['HP'], 'Attack': stats['Attack'], 'Defense': stats['Defense'],
-            'Sp. Atk': stats['Sp. Atk'], 'Sp. Def': stats['Sp. Def'], 'Speed': stats['Speed']
-        }
+        orig = {'HP': stats['HP'], 'Attack': stats['Attack'], 'Defense': stats['Defense'], 'Sp. Atk': stats['Sp. Atk'], 'Sp. Def': stats['Sp. Def'], 'Speed': stats['Speed']}
         items_dict = flip_stats_dict(orig) if flip_stat_var.get() else orig
-        items = [
-            ('HP', items_dict['HP']), ('Attack', items_dict['Attack']), ('Defense', items_dict['Defense']),
-            ('Sp. Atk', items_dict['Sp. Atk']), ('Sp. Def', items_dict['Sp. Def']), ('Speed', items_dict['Speed'])
-        ]
+        items = [('HP', items_dict['HP']), ('Attack', items_dict['Attack']), ('Defense', items_dict['Defense']), ('Sp. Atk', items_dict['Sp. Atk']), ('Sp. Def', items_dict['Sp. Def']), ('Speed', items_dict['Speed'])]
         write_stat_block(info_text, items)
         info_text.insert(tk.END, "\n")
-        info_text.insert(tk.END, f"{STR['total_bst']}:	", 'stat_label')
-        info_text.insert(tk.END, f"{format_number_trim(stats['BST'])}\n", 'stat_value')
+        info_text.insert(tk.END, f"{STR['total_bst']}:\t", 'stat_label'); info_text.insert(tk.END, f"{format_number_trim(stats['BST'])}\n", 'stat_value')
+
         info_text.insert(tk.END, '\n')
-
-    # Evolution (placeholder when none)
-    if is_section_enabled(panel_key, 'evolution'):
+    if is_section_enabled(panel_key, 'evolution') and (stats.get('evolution line') or '').strip():
         evo_line = (stats.get('evolution line') or '').strip()
-        if evo_line:
-            info_text.insert(tk.END, STR['evolution'] + ': ', 'strong_label')
-            parts = [p.strip() for p in evo_line.split(',') if p.strip()]
-            for _idx, _pname in enumerate(parts):
-                tag = f"evo_{id(info_text)}_{_idx}"
-                info_text.tag_config(tag, foreground='#1a73e8', underline=True)
-                info_text.tag_bind(tag, '<Button-1>', lambda e, n=_pname, w=info_text: on_click_evo(n, w))
-                info_text.tag_bind(tag, '<Enter>', lambda e, w=info_text: w.config(cursor='hand2'))
-                info_text.tag_bind(tag, '<Leave>', lambda e, w=info_text: w.config(cursor=''))
-                info_text.insert(tk.END, _pname, tag)
-                if _idx != len(parts) - 1:
-                    info_text.insert(tk.END, ', ')
-            info_text.insert(tk.END, '\n\n')
-        else:
-            info_text.insert(tk.END, STR['evolution'] + ': ', 'strong_label')
-            info_text.insert(tk.END, '—\n\n')
-            log_calc(f"[Display] {panel_key} evolution: none")
+        info_text.insert(tk.END, STR['evolution'] + ': ', 'strong_label')
+        parts = [p.strip() for p in evo_line.split(',') if p.strip()]
+        for _idx, _pname in enumerate(parts):
+            tag = f"evo_{id(info_text)}_{_idx}"
+            info_text.tag_config(tag, foreground='#1a73e8', underline=True)
+            info_text.tag_bind(tag, '<Button-1>', lambda e, n=_pname, w=info_text: on_click_evo(n, w))
+            info_text.tag_bind(tag, '<Enter>', lambda e, w=info_text: w.config(cursor='hand2'))
+            info_text.tag_bind(tag, '<Leave>', lambda e, w=info_text: w.config(cursor=''))
+            info_text.insert(tk.END, _pname, tag)
+            if _idx != len(parts) - 1: info_text.insert(tk.END, ', ')
+        info_text.insert(tk.END, '\n\n')
 
-    # Damage always renders a matrix
     if is_section_enabled(panel_key, 'damage'):
         eff = calculate_type_effectiveness(t1, t2, active_ability=None, passive_ability=stats['Passive'])
-        info_text.insert(tk.END, STR['damage_taken'] + ': ', 'strong_label')
-        info_text.insert(tk.END, "\n\n")
-        _eff_str = format_type_effectiveness(eff)
-        _eff_body = _eff_str.split('\n', 1)[1] if '\n' in _eff_str else ''
+        info_text.insert(tk.END, STR['damage_taken'] + ': ', 'strong_label'); info_text.insert(tk.END, "\n\n")
+        _eff_str = format_type_effectiveness(eff); _eff_body = _eff_str.split('\n',1)[1] if '\n' in _eff_str else ''
         info_text.insert(tk.END, _eff_body)
 
     id_label.config(text=STR['pokedex_id'].format(stats['ID']))
+
     _assert_and_raise_core_tags(info_text)
 
 # ===== Fusion helpers that were missing in 1.2a =====
@@ -745,7 +575,6 @@ def populate_active_abilities_for(pokemon2_name: str):
         current = active_ability_var.get(); active_ability_var.set(current if current in abilities_list else abilities_list[0])
     except Exception:
         pass
-
 
 def compute_fused_typing(p1_t1: str, p1_t2: str, p2_t1: str, p2_t2: str):
     """Derive fused typing using P1 primary + P2 contribution rules."""
@@ -812,49 +641,35 @@ def calculate_fusion_stats(p1, p2):
                 'Speed': avg_round_tenth(pokemon_stats[p1]['Speed'], pokemon_stats[p2]['Speed']),
             }
             fused_bst = round(sum(fusion_stats.values()), 1)
-
             p1_t1 = pokemon_stats[p1]['Type_1']; p1_t2 = pokemon_stats[p1]['Type_2']
             p2_t1 = pokemon_stats[p2]['Type_1']; p2_t2 = pokemon_stats[p2]['Type_2']
             fused_type1, fused_type2 = compute_fused_typing(p1_t1, p1_t2, p2_t1, p2_t2)
             fused_type = fused_type1 if fused_type2 == '' or fused_type2 == fused_type1 else f"{fused_type1}/{fused_type2}"
 
             fusion_info.delete('1.0', tk.END)
-            try:
-                fusion_info.configure(font=BODY_FONT_DEF)
-            except Exception:
-                pass
+            try: fusion_info.configure(font=BODY_FONT_DEF)
+            except Exception: pass
             _assert_and_raise_core_tags(fusion_info)
 
             if is_section_enabled('fusion', 'fused_type'):
-                fusion_info.insert(tk.END, STR['fused_type_label'], 'strong_label')
-                fusion_info.insert(tk.END, f"{fused_type}\n\n")
+                fusion_info.insert(tk.END, STR['fused_type_label'], 'strong_label'); fusion_info.insert(tk.END, f"{fused_type}\n\n")
 
             abilities = list(dict.fromkeys(pokemon_stats[p2]['Abilities']))
             visible_abilities = [a for i,a in enumerate(abilities) if i!=1] if abilities else []
+
             active_ability = (active_ability_var.get() or (abilities[0] if abilities else '')).strip()
             hidden_ability = abilities[1] if len(abilities) > 1 else ''
             passive_ability = pokemon_stats[p1]['Passive']
             passive_on = passive_active_var.get()
 
             if is_section_enabled('fusion', 'abilities'):
-                if visible_abilities:
-                    fusion_info.insert(tk.END, STR['abilities'] + ': ', 'strong_label')
-                    fusion_info.insert(tk.END, f"{', '.join(visible_abilities)}\n")
-                else:
-                    fusion_info.insert(tk.END, STR['abilities'] + ': ', 'strong_label')
-                    fusion_info.insert(tk.END, '—\n')
-                    log_calc('[Display] fusion abilities: none available')
-                # Active ability (placeholder when none)
-                fusion_info.insert(tk.END, STR['active_ability'], 'strong_label')
-                fusion_info.insert(tk.END, f"{active_ability if active_ability else '—'}\n")
-                if not active_ability:
-                    log_calc('[Display] fusion active ability: none selected')
+                fusion_info.insert(tk.END, STR['abilities'] + ': ', 'strong_label'); fusion_info.insert(tk.END, f"{', '.join(visible_abilities)}\n")
+                if active_ability:
+                    fusion_info.insert(tk.END, STR['active_ability'], 'strong_label'); fusion_info.insert(tk.END, f"{active_ability}\n")
                 if hidden_ability and active_ability == hidden_ability:
-                    fusion_info.insert(tk.END, STR['hidden_ability_label'], 'strong_label')
-                    fusion_info.insert(tk.END, f"{hidden_ability}\n")
-                elif hidden_ability == '' and active_ability:
-                    # no hidden ability to echo
-                    pass
+                    fusion_info.insert(tk.END, STR['hidden_ability_label'], 'strong_label'); fusion_info.insert(tk.END, f"{hidden_ability}\n")
+                if passive_ability and passive_on:
+                    fusion_info.insert(tk.END, STR['passive_from_p1'], 'strong_label'); fusion_info.insert(tk.END, f"{passive_ability} (active)\n")
 
             if is_section_enabled('fusion', 'bst'):
                 fusion_info.insert(tk.END, "\n"); fusion_info.insert(tk.END, STR['bst_label'], 'strong_label'); fusion_info.insert(tk.END, "\n")
@@ -863,7 +678,7 @@ def calculate_fusion_stats(p1, p2):
                 items = [('HP', items_dict['HP']), ('Attack', items_dict['Attack']), ('Defense', items_dict['Defense']), ('Sp. Atk', items_dict['Sp. Atk']), ('Sp. Def', items_dict['Sp. Def']), ('Speed', items_dict['Speed'])]
                 write_stat_block(fusion_info, items)
                 fusion_info.insert(tk.END, "\n")
-                fusion_info.insert(tk.END, f"{STR['total_bst']}:	", 'stat_label'); fusion_info.insert(tk.END, f"{format_number_trim(fused_bst)}\n", 'stat_value')
+                fusion_info.insert(tk.END, f"{STR['total_bst']}:\t", 'stat_label'); fusion_info.insert(tk.END, f"{format_number_trim(fused_bst)}\n", 'stat_value')
 
             if is_section_enabled('fusion', 'diffs'):
                 diff1 = fused_bst - float(pokemon_stats[p1]['BST']); diff2 = fused_bst - float(pokemon_stats[p2]['BST'])
@@ -879,17 +694,10 @@ def calculate_fusion_stats(p1, p2):
                 return f"{label}: " + '; '.join(parts)
 
             if is_section_enabled('fusion', 'ability_effects'):
-                wrote_any = False
                 ae = _ability_effect_summary_line(STR['active_effect'], active_ability)
-                if active_ability and 'no type-chart effects' not in ae:
-                    fusion_info.insert(tk.END, ae + '\n'); wrote_any = True
+                if active_ability and 'no type-chart effects' not in ae: fusion_info.insert(tk.END, ae + '\n')
                 pe = _ability_effect_summary_line(STR['passive_effect'], (passive_ability if passive_on else ''))
-                if passive_ability and passive_on and 'no type-chart effects' not in pe:
-                    fusion_info.insert(tk.END, pe + '\n'); wrote_any = True
-                if not wrote_any:
-                    fusion_info.insert(tk.END, STR['ability_effect_summary'] + ': ', 'strong_label')
-                    fusion_info.insert(tk.END, 'no type-chart effects\n')
-                    log_calc('[Display] fusion ability effects: none')
+                if passive_ability and passive_on and 'no type-chart effects' not in pe: fusion_info.insert(tk.END, pe + '\n')
                 fusion_info.insert(tk.END, '\n')
 
             if is_section_enabled('fusion', 'quick_compare'):
@@ -898,7 +706,7 @@ def calculate_fusion_stats(p1, p2):
                     if target_key == 'p1': bt1, bt2, target_name = pokemon_stats[p1]['Type_1'], pokemon_stats[p1]['Type_2'], p1
                     else: bt1, bt2, target_name = pokemon_stats[p2]['Type_1'], pokemon_stats[p2]['Type_2'], p2
                     eff_fused_raw = calculate_type_effectiveness(fused_type1, fused_type2, active_ability=active_ability, passive_ability=(passive_ability if passive_on else None))
-                    eff_base_raw = calculate_type_effectiveness(bt1, bt2, active_ability=None, passive_ability=None)
+                    eff_base_raw  = calculate_type_effectiveness(bt1, bt2, active_ability=None, passive_ability=None)
                     def group_effects(eff):
                         groups = {0.0:set(), 0.25:set(), 0.5:set(), 1.0:set(), 2.0:set(), 4.0:set()}
                         for t,v in eff.items():
@@ -911,17 +719,17 @@ def calculate_fusion_stats(p1, p2):
                         return groups
                     gf = group_effects(eff_fused_raw); gb = group_effects(eff_base_raw)
                     new_imm = sorted(gf[0.0] - gb[0.0]); lost_imm = sorted(gb[0.0] - gf[0.0])
-                    new_wk = sorted((gf[2.0] | gf[4.0]) - (gb[2.0] | gb[4.0]))
+                    new_wk  = sorted((gf[2.0] | gf[4.0]) - (gb[2.0] | gb[4.0]))
                     lost_wk = sorted((gb[2.0] | gb[4.0]) - (gf[2.0] | gf[4.0]))
                     new_res = sorted((gf[0.25] | gf[0.5]) - (gb[0.25] | gb[0.5]))
                     lost_res= sorted((gb[0.25] | gb[0.5]) - (gf[0.25] | gf[0.5]))
                     fusion_info.insert(tk.END, f"Quick Compare vs {target_name}: ", 'strong_label'); fusion_info.insert(tk.END, "\n")
                     if new_imm: fusion_info.insert(tk.END, STR['new_imm'] + f"{', '.join(new_imm)}\n")
                     if lost_imm: fusion_info.insert(tk.END, STR['lost_imm'] + f"{', '.join(lost_imm)}\n")
-                    if new_wk: fusion_info.insert(tk.END, STR['new_wk'] + f"{', '.join(new_wk)}\n")
+                    if new_wk:  fusion_info.insert(tk.END, STR['new_wk']  + f"{', '.join(new_wk)}\n")
                     if lost_wk: fusion_info.insert(tk.END, STR['lost_wk'] + f"{', '.join(lost_wk)}\n")
                     if new_res: fusion_info.insert(tk.END, STR['new_res'] + f"{', '.join(new_res)}\n")
-                    if lost_res: fusion_info.insert(tk.END, STR['lost_res']+ f"{', '.join(lost_res)}\n")
+                    if lost_res:fusion_info.insert(tk.END, STR['lost_res']+ f"{', '.join(lost_res)}\n")
                     if not (new_imm or lost_imm or new_wk or lost_wk or new_res or lost_res): fusion_info.insert(tk.END, STR['no_changes'] + "\n")
                     fusion_info.insert(tk.END, "\n")
                 except Exception as _e:
@@ -937,6 +745,7 @@ def calculate_fusion_stats(p1, p2):
 
             dt_ms = (time.perf_counter() - t0) * 1000.0
             status_text.set(f"Fused Type: {fused_type} Active: {active_ability or '—'} Passive: {'ON' if passive_on else 'OFF'} Flip: {'ON' if flip_stat_var.get() else 'OFF'} Calc: {dt_ms:.1f} ms")
+
             try:
                 try:
                     log_calc(f"[Calc] {p1}+{p2} -> {fused_type} bst={fused_bst} dt={dt_ms:.1f}ms")
@@ -949,11 +758,7 @@ def calculate_fusion_stats(p1, p2):
     except Exception as e:
         logging.error(f"Error in calculate_fusion_stats: {str(e)}", exc_info=True)
         messagebox.showerror('Error', f"An error occurred during fusion: {str(e)}")
-
-# =====================
-# \ UI helpers & dialog /
-# =====================
-
+# UI helpers & dialog
 def refresh_side_panels():
     try:
         p1 = pokemon1_var.get().strip();
@@ -1113,11 +918,7 @@ def show_display_options():
     ttk.Button(btns, text=STR['select_none'], command=do_select_none).pack(side=tk.LEFT, padx=5)
     ttk.Button(btns, text=STR['restore_defaults'], command=do_restore_defaults).pack(side=tk.LEFT, padx=5)
     ttk.Button(btns, text=STR['close'], command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
-
-# ===============================
-# \ Type effectiveness /
-# ===============================
-
+# Type effectiveness
 type_effectiveness = {
     'Normal':  {'weaknesses': ['Fighting'], 'resistances': [], 'immunities': ['Ghost']},
     'Fire':    {'weaknesses': ['Water', 'Ground', 'Rock'], 'resistances': ['Fire', 'Grass', 'Ice', 'Bug', 'Steel', 'Fairy'], 'immunities': []},
@@ -1190,11 +991,7 @@ def format_type_effectiveness(effectiveness):
         s = (f"{k:.2f}" if abs(k - round(k)) > 1e-9 else f"{int(round(k))}").rstrip('0').rstrip('.')
         result += f"{s}x damage: {', '.join(types)}\n"
     return result.strip()
-
-# =====================
-# \ App setup & menus /
-# =====================
-
+# App setup & menus
 load_pokemon_data_into(pokemon_stats)
 root = tk.Tk(); root.title(f"PokéRogue Fusion Calculator — build {BUILD_TAG}")
 root.geometry('1550x540')
@@ -1227,7 +1024,6 @@ view_menu.add_checkbutton(label='Show Calculation Logs', variable=calc_logs_var,
 view_menu.add_checkbutton(label='Show UI Layout Logs', variable=ui_layout_logs_var, onvalue=True, offvalue=False, command=dump_ui_layout_metrics)
 view_menu.add_checkbutton(label='Show Widget Font/Tag Logs', variable=widget_font_tag_logs_var, onvalue=True, offvalue=False, command=dump_widget_font_tag_logs)
 view_menu.add_separator()
-
 
 # Runtime vars
 show_status_bar_var = tk.BooleanVar(value=True)
@@ -1426,6 +1222,11 @@ def force_recalc_if_ready():
         pass
 
 def maybe_recalc_if_ready():
-    return
+    if not AUTO_RECALC_ON_SELECT:
+        return
+    try:
+        force_recalc_if_ready()
+    except Exception:
+        pass
 
 root.mainloop()
