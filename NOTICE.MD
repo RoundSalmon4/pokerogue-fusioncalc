@@ -5,8 +5,6 @@
 
 If you maintain either upstream, thank you! Please open an issue if any attribution or link needs adjustment.
 
----
-
 ## 2) License Note
 
 This project is licensed under the **GNU Affero General Public License, version 3.0 (AGPL‑3.0)**.  
