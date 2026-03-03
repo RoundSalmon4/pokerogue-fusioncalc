@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import sys, os, re, json, hashlib, ast, time
+
+HEADER_RE   = re.compile(r'^\s*#\s*BUILD_HASH:\s*([0-9a-fA-F]{12})\s*$')
+BUILDTAG_RE = re.compile(r'^\s*BUILD_TAG\s*=\s*(["\'])\s*([^"\']*)\s*\1\s*$')
+
+def _normalize(s: str) -> str:
+    return s.replace('\r\n','\n').replace('\r','\n')
+
+def canonicalize(text: str):
+    s = _normalize(text)
+    lines = s.split('\n')
+    header_idx = -1
+    header_hash = ''
+    if lines and HEADER_RE.match(lines[0]):
+        header_idx = 0
+        header_hash = HEADER_RE.match(lines[0]).group(1).lower()
+        lines = lines[1:]
+    # BUILD_TAG -> empty
+    for i, ln in enumerate(lines):
+        if BUILDTAG_RE.match(ln):
+            lines[i] = 'BUILD_TAG = ""'
+            break
+    return '\n'.join(lines), header_hash, header_idx
+
+def compute_hash(canon: str) -> str:
+    return hashlib.sha256(canon.encode('utf-8')).hexdigest()[:12]
+
+def verify(path: str):
+    t0 = time.time()
+    raw = open(path,'rb').read()
+    text = raw.decode('utf-8')
+    canon, header_hash, header_idx = canonicalize(text)
+    comp = compute_hash(canon)
+    # Header check
+    header_ok = (header_idx == 0 and header_hash == comp)
+    # BUILD_TAG check (if present)
+    buildtag_val = None
+    for ln in _normalize(text).split('\n'):
+        m = BUILDTAG_RE.match(ln)
+        if m:
+            buildtag_val = m.group(2)
+            break
+    buildtag_ok = (buildtag_val == comp) if buildtag_val is not None else True
+    # AST gate
+    try:
+        ast.parse(text)
+        ast_ok = True
+    except SyntaxError:
+        ast_ok = False
+    ok = header_ok and ast_ok and buildtag_ok
+    return ok, {
+        'reported_hash': header_hash or None,
+        'computed_hash': comp,
+        'header_top': (header_idx == 0),
+        'buildtag_present': (buildtag_val is not None),
+        'buildtag_value': buildtag_val,
+        'buildtag_matches': (buildtag_val == comp) if buildtag_val is not None else None,
+        'ast_ok': ast_ok,
+        'size_bytes': len(raw),
+        'duration_ms': round((time.time()-t0)*1000,2),
+        'svh_version': 'SVH v1'
+    }
+
+def main(argv):
+    path = argv[1] if len(argv) > 1 else 'fusioncalc_test.py'
+    ok, ev = verify(path)
+    print(json.dumps({'ok': ok, 'evidence': ev}, indent=2))
+    return 0 if ok else 2
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv))
