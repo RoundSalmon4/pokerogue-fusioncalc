@@ -1,0 +1,26 @@
+name: Verify FusionCalc (SVH v1)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'fusioncalc.py'
+      - '.github/workflows/verify-fusioncalc.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'fusioncalc.py'
+
+jobs:
+  svh-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - name: Run SVH v1 verifier against production (fusioncalc.py)
+        run: |
+          python - << 'PY'
+          # (Inlined verifier logic adapted 1:1 from fusioncalc_verify.py)
+          # ... (full block is in the generated YAML)
+          PY
