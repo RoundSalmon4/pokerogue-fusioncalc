@@ -1,6 +1,6 @@
 name: Verify fusioncalc.py
 
-# Optional: this is the run name you see in the Actions list / Check Suite
+# Optional: nicer run name in the Actions list
 run-name: "fusioncalc verification – ${{ github.event_name }} #${{ github.run_number }}"
 
 on:
@@ -31,46 +31,53 @@ jobs:
         with:
           python-version: '3.x'
 
-      # You will see this step name (not a file path) in the UI
-      - name: Verify BUILD_HASH / BUILD_TAG / AST
+      - name: Verify BUILD_HASH / BUILD_TAG / AST (stable EOF)
         shell: bash
         run: |
           set -euo pipefail
-
-          # Inline Python via heredoc so nothing depends on repo paths
           python - <<'PYCODE'
           from __future__ import annotations
-          import sys, re, json, hashlib, ast, time, io
+          import sys, re, json, hashlib, ast, time
 
           HEADER_RE   = re.compile(r'^\s*#\s*BUILD_HASH:\s*([0-9a-fA-F]{12})\s*$')
           BUILDTAG_RE = re.compile(r'^\s*BUILD_TAG\s*=\s*([\"\\\'])\s*([^\"\\\']*)\s*\1\s*$')
 
           def _normalize(s: str) -> str:
+              # Normalize CRLF/CR to LF
               return s.replace('\r\n','\n').replace('\r','\n')
 
           def canonicalize(text: str):
               s = _normalize(text)
               lines = s.split('\n')
+
               header_idx = -1
               header_hash = ''
+
+              # Optional top header line: "# BUILD_HASH: <12-hex>"
               if lines and HEADER_RE.match(lines[0]):
                   header_idx = 0
                   header_hash = HEADER_RE.match(lines[0]).group(1).lower()
                   lines = lines[1:]
-              # BUILD_TAG -> empty
+
+              # Zero-out BUILD_TAG if present
               for i, ln in enumerate(lines):
                   if BUILDTAG_RE.match(ln):
                       lines[i] = 'BUILD_TAG = ""'
                       break
-              return '\n'.join(lines), header_hash, header_idx
+
+              # *** Minimal stable fix: ensure deterministic EOF ***
+              # Canonical text always ends with exactly ONE trailing newline.
+              canon = '\n'.join(lines).rstrip('\n') + '\n'
+              return canon, header_hash, header_idx
 
           def compute_hash(canon: str) -> str:
               return hashlib.sha256(canon.encode('utf-8')).hexdigest()[:12]
 
           def verify(path: str):
               t0 = time.time()
-              raw = open(path,'rb').read()
+              raw = open(path, 'rb').read()
               text = raw.decode('utf-8')
+
               canon, header_hash, header_idx = canonicalize(text)
               comp = compute_hash(canon)
 
@@ -94,7 +101,6 @@ jobs:
                   ast_ok = False
 
               ok = header_ok and ast_ok and buildtag_ok
-
               return ok, {
                   'reported_hash': header_hash or None,
                   'computed_hash': comp,
@@ -112,7 +118,6 @@ jobs:
           ok, ev = verify(path)
           print(json.dumps({'ok': ok, 'evidence': ev}, indent=2))
           if not ok:
-              # Emit an annotation to make the failure obvious in the UI
               print(f"::error title=Verification failed::Expected hash {ev['computed_hash']} (12-hex). Check header/build tag/AST.")
               raise SystemExit(2)
           PYCODE
