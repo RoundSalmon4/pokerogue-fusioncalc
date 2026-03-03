@@ -1,4 +1,4 @@
-# BUILD_HASH: 70a1d2617d2b
+# BUILD_HASH: ab16c29d0809
 
 
 import tkinter as tk
@@ -123,7 +123,7 @@ def on_toggle_verbose_logs():
 
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
 AUTO_RECALC_ON_SELECT = False
-BUILD_TAG = "70a1d2617d2b"
+BUILD_TAG = "ab16c29d0809"
 # Fonts
 HEADING_FONT_DEF = ("Arial", 11, "bold")   # headings
 BODY_FONT_DEF    = ("Arial", 10)            # non-numeric body
