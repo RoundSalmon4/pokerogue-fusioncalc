@@ -1,7 +1,6 @@
 name: Verify FusionCalc (SVH v1)
 
 on:
-  workflow_dispatch: {}
   push:
     branches: [ main, master ]
     paths:
