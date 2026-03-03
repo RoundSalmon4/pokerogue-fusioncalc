@@ -40,7 +40,7 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from __future__ import annotations
-          import re, sys, json, importlib.util
+          import re, os, sys, json, importlib.util
           from pathlib import Path
 
           FCALC = Path("fusioncalc.py")
@@ -73,34 +73,31 @@ jobs:
               br'(?m)^(?P<prefix>\s*BUILD_TAG\s*=\s*)(?P<quote>["\'])(?P<val>[^"\']*)(?P=quote)(?P<suffix>\s*(?:\r?\n|$))'
           )
 
-          changed = False
-
+          # Replace header (must exist)
           if HEADER_RE.search(b):
               b = HEADER_RE.sub(lambda m: m.group("prefix") + comp.encode("ascii") + m.group("suffix"), b, count=1)
-              changed = True
           else:
               print("::error title=Header missing::Expected '# BUILD_HASH: <12-hex>' line.")
               sys.exit(2)
 
+          # Replace BUILD_TAG (must exist; do not insert to avoid hash drift)
           if TAG_RE.search(b):
               b = TAG_RE.sub(
                   lambda m: m.group("prefix") + m.group("quote") + comp.encode("ascii") + m.group("quote") + m.group("suffix"),
                   b, count=1
               )
-              changed = True
           else:
               print("::error title=BUILD_TAG missing::Expected a BUILD_TAG line to update; refusing to insert.")
               sys.exit(2)
 
-          if changed:
-              FCALC.write_bytes(b)
+          FCALC.write_bytes(b)
 
           # 3) Re-verify after update
           ok1, ev1 = mod.verify(str(FCALC))
           print(json.dumps({"before": ev0, "after": ev1}, indent=2))
 
-          # Export the hash for the commit message using new outputs API
-          with open(Path.environ.get("GITHUB_OUTPUT", "/dev/stdout"), "a") as out:
+          # Export the hash for the commit step (corrected to use os.environ)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"hash={comp}\n")
 
           if not ok1:
