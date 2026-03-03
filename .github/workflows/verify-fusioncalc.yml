@@ -1,4 +1,4 @@
-name: Verify & Sync BUILD_HASH/BUILD_TAG
+name: Verify & Sync BUILD_HASH/BUILD_TAG (in-place, byte-safe)
 
 on:
   push:
@@ -13,20 +13,19 @@ on:
       - '.github/workflows/verify-fusioncalc.yml'
   workflow_dispatch:
 
-# We will push a commit when needed
+# We push a commit when we have permission (pushes and same-repo PRs)
 permissions:
   contents: write
 
 jobs:
   verify:
-    name: compute → update → re-verify → (optional) commit
+    name: compute → in-place patch → re-verify → (optional) commit
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Keep it simple: check out the branch head (for PRs, the head ref)
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
 
@@ -35,17 +34,18 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Compute hash, update header/tag, and re-verify
-        id: update
+      - name: Compute canonical hash (repo verifier), patch values IN-PLACE, re-verify
+        id: sync
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from __future__ import annotations
-          import os, re, json, sys, importlib.util, pathlib
+          import re, sys, json, importlib.util
+          from pathlib import Path
 
-          FCALC = pathlib.Path("fusioncalc.py")
-          FVER  = pathlib.Path("fusioncalc_verify.py")
+          FCALC = Path("fusioncalc.py")
+          FVER  = Path("fusioncalc_verify.py")
 
           if not FCALC.exists():
             print("::error title=Missing file::fusioncalc.py not found at repo root")
@@ -54,61 +54,77 @@ jobs:
             print("::error title=Missing file::fusioncalc_verify.py not found at repo root")
             sys.exit(2)
 
-          # Load the repo's verifier as a module
+          # Load repo verifier
           spec = importlib.util.spec_from_file_location("fusioncalc_verify", str(FVER))
           mod = importlib.util.module_from_spec(spec)  # type: ignore
           spec.loader.exec_module(mod)                 # type: ignore
 
-          # 1) Compute current canonical hash using repo logic
+          # ----- Step 1: compute hash from current bytes (repo rules) -----
           ok0, ev0 = mod.verify(str(FCALC))
-          comp = ev0["computed_hash"]  # 12-hex canonical hash for *current* bytes
+          comp = ev0["computed_hash"]  # 12-hex
+          header_before = ev0.get("reported_hash")
+          tag_before    = ev0.get("buildtag_value")
+          size_before   = ev0.get("size_bytes")
 
-          # 2) Update BUILD_HASH (top line) and BUILD_TAG in the file
-          text = FCALC.read_text(encoding="utf-8")
-          nl_norm = text.replace('\r\n','\n').replace('\r','\n')
-          lines = nl_norm.split('\n')
+          # ----- Step 2: IN-PLACE byte-safe replacement of values only -----
+          b = FCALC.read_bytes()
 
-          HEADER_RE   = re.compile(r'^\s*#\s*BUILD_HASH:\s*([0-9a-fA-F]{12})\s*$')
-          BUILDTAG_RE = re.compile(r'^\s*BUILD_TAG\s*=\s*([\"\\\'])\s*([^\"\\\']*)\s*\\1\s*$')
+          # (?m) multi-line anchors; preserve spacing, quotes, and EOLs
+          HEADER_RE = re.compile(
+              br'(?m)^(?P<prefix>\s*#\s*BUILD_HASH:\s*)(?P<val>[0-9a-fA-F]{12})(?P<suffix>\s*(?:\r?\n|$))'
+          )
+          TAG_RE = re.compile(
+              br'(?m)^(?P<prefix>\s*BUILD_TAG\s*=\s*)(?P<quote>["\'])(?P<val>[^"\']*)(?P=quote)(?P<suffix>\s*(?:\r?\n|$))'
+          )
 
-          # Ensure header at top
-          if lines and HEADER_RE.match(lines[0]):
-              lines[0] = f"# BUILD_HASH: {comp}"
+          replaced = False
+
+          # Replace header value (must exist)
+          def _repl_header(m: re.Match[bytes]) -> bytes:
+              nonlocal replaced
+              replaced = True
+              return m.group("prefix") + comp.encode("ascii") + m.group("suffix")
+
+          if HEADER_RE.search(b):
+              b2 = HEADER_RE.sub(_repl_header, b, count=1)
           else:
-              lines.insert(0, f"# BUILD_HASH: {comp}")
-
-          # Ensure BUILD_TAG exists and matches; if missing, insert after header
-          found_tag = False
-          for i, ln in enumerate(lines):
-              if BUILDTAG_RE.match(ln):
-                  lines[i] = f'BUILD_TAG = "{comp}"'
-                  found_tag = True
-                  break
-          if not found_tag:
-              # Insert immediately after header
-              insert_idx = 1 if len(lines) > 0 else 0
-              lines.insert(insert_idx, f'BUILD_TAG = "{comp}"')
-
-          new_text = "\n".join(lines)
-          FCALC.write_text(new_text, encoding="utf-8")
-
-          # 3) Re-verify after the update (should pass now)
-          ok1, ev1 = mod.verify(str(FCALC))
-          print(json.dumps({"before": ev0, "after": ev1}, indent=2))
-
-          # Export the hash for commit message
-          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"hash={comp}\n")
-
-          if not ok1:
-              print("::error title=Re-verification failed::File did not pass after header/tag update.")
+              print("::error title=Header missing::Expected '# BUILD_HASH: <12-hex>' on first line.")
               sys.exit(2)
+
+          # Replace BUILD_TAG value (must exist; do NOT insert)
+          def _repl_tag(m: re.Match[bytes]) -> bytes:
+              nonlocal replaced
+              replaced = True
+              return m.group("prefix") + m.group("quote") + comp.encode("ascii") + m.group("quote") + m.group("suffix")
+
+          if TAG_RE.search(b2):
+              b3 = TAG_RE.sub(_repl_tag, b2, count=1)
+          else:
+              print("::error title=BUILD_TAG missing::Expected a BUILD_TAG line to update; refusing to insert to avoid hash drift.")
+              sys.exit(2)
+
+          if not replaced:
+              print("::notice title=No changes made::Header/BUILD_TAG already match computed hash.")
+          else:
+              # Write back exactly; preserves original EOL style and all other bytes
+              FCALC.write_bytes(b3)
+
+          # ----- Step 3: re-verify AFTER in-place update -----
+          ok1, ev1 = mod.verify(str(FCALC))
+
+          out = {
+              "before": ev0,
+              "after":  ev1,
+              "note": "In-place value patch preserves file length except for 12-hex swaps."
+          }
+          print(json.dumps(out, indent=2))
+
+          # Export values for commit step
+          print(f"::set-output name=hash::{comp}")
           PY
 
       - name: Commit & push the synchronized header/tag
-        # Push if this workflow can write to the branch:
-        #  - push events (always same repo)
-        #  - PRs where head repo is the same as base repo (not forks)
+        # Push only when we can write to the branch (not forks)
         if: >
           github.event_name == 'push' ||
           (github.event_name == 'pull_request' &&
@@ -120,13 +136,13 @@ jobs:
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add fusioncalc.py
-            git commit -m "CI: sync BUILD_HASH/BUILD_TAG to ${{ steps.update.outputs.hash }}"
+            git commit -m "CI: sync BUILD_HASH/BUILD_TAG to ${{ steps.sync.outputs.hash }} (in-place patch)"
             git push
           else
             echo "No changes to commit."
           fi
 
-      - name: Final verification (should be green)
+      - name: Final verification (should be green now)
         shell: bash
         run: |
           set -euo pipefail
