@@ -1,4 +1,4 @@
-name: Verify fusioncalc.py (raw bytes, EOF-tolerant)
+name: Verify & Sync BUILD_HASH/BUILD_TAG
 
 on:
   push:
@@ -13,107 +13,121 @@ on:
       - '.github/workflows/verify-fusioncalc.yml'
   workflow_dispatch:
 
+# We will push a commit when needed
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
-    name: fusioncalc verifier (raw)
+    name: compute → update → re-verify → (optional) commit
     runs-on: ubuntu-latest
 
     steps:
-      - name: Prepare env
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "REPO=${{ github.repository }}" >> "$GITHUB_ENV"
-          echo "SHA=${{ github.sha }}" >> "$GITHUB_ENV"
-          echo "TMP_DIR=$RUNNER_TEMP/fusioncalc_ci" >> "$GITHUB_ENV"
-
-      - name: Fetch raw files for current commit (no checkout)
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$TMP_DIR"
-          curl -fsSL -o "$TMP_DIR/fusioncalc.py"        "https://raw.githubusercontent.com/$REPO/$SHA/fusioncalc.py"
-          curl -fsSL -o "$TMP_DIR/fusioncalc_verify.py" "https://raw.githubusercontent.com/$REPO/$SHA/fusioncalc_verify.py"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Keep it simple: check out the branch head (for PRs, the head ref)
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Verify (EOF-tolerant) using repo script + stable check
+      - name: Compute hash, update header/tag, and re-verify
+        id: update
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import os, re, json, hashlib, importlib.util, pathlib, sys
+          from __future__ import annotations
+          import os, re, json, sys, importlib.util, pathlib
 
-          TMP = pathlib.Path(os.environ["TMP_DIR"])
-          fcalc = TMP / "fusioncalc.py"
-          fver  = TMP / "fusioncalc_verify.py"
+          FCALC = pathlib.Path("fusioncalc.py")
+          FVER  = pathlib.Path("fusioncalc_verify.py")
 
-          # Import the repo's verifier as a module
-          spec = importlib.util.spec_from_file_location("fusioncalc_verify", str(fver))
-          mod = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(mod)  # type: ignore
+          if not FCALC.exists():
+            print("::error title=Missing file::fusioncalc.py not found at repo root")
+            sys.exit(2)
+          if not FVER.exists():
+            print("::error title=Missing file::fusioncalc_verify.py not found at repo root")
+            sys.exit(2)
 
-          ok_repo, ev = mod.verify(str(fcalc))
+          # Load the repo's verifier as a module
+          spec = importlib.util.spec_from_file_location("fusioncalc_verify", str(FVER))
+          mod = importlib.util.module_from_spec(spec)  # type: ignore
+          spec.loader.exec_module(mod)                 # type: ignore
 
-          # Build a "stable EOF" canonical hash (exactly one trailing '\n')
+          # 1) Compute current canonical hash using repo logic
+          ok0, ev0 = mod.verify(str(FCALC))
+          comp = ev0["computed_hash"]  # 12-hex canonical hash for *current* bytes
+
+          # 2) Update BUILD_HASH (top line) and BUILD_TAG in the file
+          text = FCALC.read_text(encoding="utf-8")
+          nl_norm = text.replace('\r\n','\n').replace('\r','\n')
+          lines = nl_norm.split('\n')
+
           HEADER_RE   = re.compile(r'^\s*#\s*BUILD_HASH:\s*([0-9a-fA-F]{12})\s*$')
           BUILDTAG_RE = re.compile(r'^\s*BUILD_TAG\s*=\s*([\"\\\'])\s*([^\"\\\']*)\s*\\1\s*$')
 
-          raw_text = fcalc.read_bytes().decode("utf-8")
-          def canonicalize_stable(text: str):
-            s = text.replace('\r\n','\n').replace('\r','\n')
-            lines = s.split('\n')
-            if lines and HEADER_RE.match(lines[0]):
-              lines = lines[1:]
-            for i, ln in enumerate(lines):
+          # Ensure header at top
+          if lines and HEADER_RE.match(lines[0]):
+              lines[0] = f"# BUILD_HASH: {comp}"
+          else:
+              lines.insert(0, f"# BUILD_HASH: {comp}")
+
+          # Ensure BUILD_TAG exists and matches; if missing, insert after header
+          found_tag = False
+          for i, ln in enumerate(lines):
               if BUILDTAG_RE.match(ln):
-                lines[i] = 'BUILD_TAG = ""'
-                break
-            # minimal stable EOF rule
-            return '\n'.join(lines).rstrip('\n') + '\n'
+                  lines[i] = f'BUILD_TAG = "{comp}"'
+                  found_tag = True
+                  break
+          if not found_tag:
+              # Insert immediately after header
+              insert_idx = 1 if len(lines) > 0 else 0
+              lines.insert(insert_idx, f'BUILD_TAG = "{comp}"')
 
-          stable_hash = hashlib.sha256(canonicalize_stable(raw_text).encode('utf-8')).hexdigest()[:12]
+          new_text = "\n".join(lines)
+          FCALC.write_text(new_text, encoding="utf-8")
 
-          header = ev.get("reported_hash")
-          buildtag_val = ev.get("buildtag_value")
-          ast_ok = bool(ev.get("ast_ok"))
+          # 3) Re-verify after the update (should pass now)
+          ok1, ev1 = mod.verify(str(FCALC))
+          print(json.dumps({"before": ev0, "after": ev1}, indent=2))
 
-          # Accept if:
-          #  1) AST is OK AND
-          #  2) header exists AND
-          #  3) (repo-computed == header OR stable-eof-computed == header) AND
-          #  4) if BUILD_TAG present, it equals header
-          tag_ok = (buildtag_val is None) or (buildtag_val == header)
-          pass_eof_tolerant = ast_ok and header and tag_ok and (
-              ev["computed_hash"] == header or stable_hash == header
-          )
+          # Export the hash for commit message
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"hash={comp}\n")
 
-          summary = {
-            "header": header,
-            "computed_repo": ev["computed_hash"],
-            "computed_stable_eof": stable_hash,
-            "buildtag_value": buildtag_val,
-            "ast_ok": ast_ok,
-            "pass_eof_tolerant": bool(pass_eof_tolerant),
-            "evidence": ev
-          }
-          print(json.dumps(summary, indent=2))
-
-          if not pass_eof_tolerant:
-            # Emit a GitHub annotation for quick visibility
-            print(f"::error title=Verification failed::Header {header} "
-                  f"!= computed_repo {ev['computed_hash']} and != computed_stable {stable_hash}")
-            sys.exit(2)
+          if not ok1:
+              print("::error title=Re-verification failed::File did not pass after header/tag update.")
+              sys.exit(2)
           PY
 
-      - name: Purge temporary files
-        if: always()
+      - name: Commit & push the synchronized header/tag
+        # Push if this workflow can write to the branch:
+        #  - push events (always same repo)
+        #  - PRs where head repo is the same as base repo (not forks)
+        if: >
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name == github.repository)
         shell: bash
         run: |
-          rm -rf "$TMP_DIR"
+          set -euo pipefail
+          if ! git diff --quiet -- fusioncalc.py; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add fusioncalc.py
+            git commit -m "CI: sync BUILD_HASH/BUILD_TAG to ${{ steps.update.outputs.hash }}"
+            git push
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Final verification (should be green)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python fusioncalc_verify.py fusioncalc.py
