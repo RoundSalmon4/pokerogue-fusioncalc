@@ -1,4 +1,4 @@
-name: Verify & Sync BUILD_HASH/BUILD_TAG (in-place, byte-safe)
+name: Verify & Sync BUILD_HASH/BUILD_TAG (byte-safe)
 
 on:
   push:
@@ -13,7 +13,6 @@ on:
       - '.github/workflows/verify-fusioncalc.yml'
   workflow_dispatch:
 
-# We push a commit when we have permission (pushes and same-repo PRs)
 permissions:
   contents: write
 
@@ -34,7 +33,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Compute canonical hash (repo verifier), patch values IN-PLACE, re-verify
+      - name: Compute canonical hash, patch values IN-PLACE, and re-verify
         id: sync
         shell: bash
         run: |
@@ -48,28 +47,25 @@ jobs:
           FVER  = Path("fusioncalc_verify.py")
 
           if not FCALC.exists():
-            print("::error title=Missing file::fusioncalc.py not found at repo root")
-            sys.exit(2)
+              print("::error title=Missing file::fusioncalc.py not found at repo root")
+              sys.exit(2)
           if not FVER.exists():
-            print("::error title=Missing file::fusioncalc_verify.py not found at repo root")
-            sys.exit(2)
+              print("::error title=Missing file::fusioncalc_verify.py not found at repo root")
+              sys.exit(2)
 
           # Load repo verifier
           spec = importlib.util.spec_from_file_location("fusioncalc_verify", str(FVER))
           mod = importlib.util.module_from_spec(spec)  # type: ignore
           spec.loader.exec_module(mod)                 # type: ignore
 
-          # ----- Step 1: compute hash from current bytes (repo rules) -----
+          # 1) Compute current canonical hash using repo rules
           ok0, ev0 = mod.verify(str(FCALC))
           comp = ev0["computed_hash"]  # 12-hex
-          header_before = ev0.get("reported_hash")
-          tag_before    = ev0.get("buildtag_value")
-          size_before   = ev0.get("size_bytes")
 
-          # ----- Step 2: IN-PLACE byte-safe replacement of values only -----
+          # 2) IN-PLACE byte-safe replacement (values only)
           b = FCALC.read_bytes()
 
-          # (?m) multi-line anchors; preserve spacing, quotes, and EOLs
+          # Preserve spacing/quotes/EOLs; replace only the 12-hex payloads
           HEADER_RE = re.compile(
               br'(?m)^(?P<prefix>\s*#\s*BUILD_HASH:\s*)(?P<val>[0-9a-fA-F]{12})(?P<suffix>\s*(?:\r?\n|$))'
           )
@@ -77,54 +73,42 @@ jobs:
               br'(?m)^(?P<prefix>\s*BUILD_TAG\s*=\s*)(?P<quote>["\'])(?P<val>[^"\']*)(?P=quote)(?P<suffix>\s*(?:\r?\n|$))'
           )
 
-          replaced = False
-
-          # Replace header value (must exist)
-          def _repl_header(m: re.Match[bytes]) -> bytes:
-              nonlocal replaced
-              replaced = True
-              return m.group("prefix") + comp.encode("ascii") + m.group("suffix")
+          changed = False
 
           if HEADER_RE.search(b):
-              b2 = HEADER_RE.sub(_repl_header, b, count=1)
+              b = HEADER_RE.sub(lambda m: m.group("prefix") + comp.encode("ascii") + m.group("suffix"), b, count=1)
+              changed = True
           else:
-              print("::error title=Header missing::Expected '# BUILD_HASH: <12-hex>' on first line.")
+              print("::error title=Header missing::Expected '# BUILD_HASH: <12-hex>' line.")
               sys.exit(2)
 
-          # Replace BUILD_TAG value (must exist; do NOT insert)
-          def _repl_tag(m: re.Match[bytes]) -> bytes:
-              nonlocal replaced
-              replaced = True
-              return m.group("prefix") + m.group("quote") + comp.encode("ascii") + m.group("quote") + m.group("suffix")
-
-          if TAG_RE.search(b2):
-              b3 = TAG_RE.sub(_repl_tag, b2, count=1)
+          if TAG_RE.search(b):
+              b = TAG_RE.sub(
+                  lambda m: m.group("prefix") + m.group("quote") + comp.encode("ascii") + m.group("quote") + m.group("suffix"),
+                  b, count=1
+              )
+              changed = True
           else:
-              print("::error title=BUILD_TAG missing::Expected a BUILD_TAG line to update; refusing to insert to avoid hash drift.")
+              print("::error title=BUILD_TAG missing::Expected a BUILD_TAG line to update; refusing to insert.")
               sys.exit(2)
 
-          if not replaced:
-              print("::notice title=No changes made::Header/BUILD_TAG already match computed hash.")
-          else:
-              # Write back exactly; preserves original EOL style and all other bytes
-              FCALC.write_bytes(b3)
+          if changed:
+              FCALC.write_bytes(b)
 
-          # ----- Step 3: re-verify AFTER in-place update -----
+          # 3) Re-verify after update
           ok1, ev1 = mod.verify(str(FCALC))
+          print(json.dumps({"before": ev0, "after": ev1}, indent=2))
 
-          out = {
-              "before": ev0,
-              "after":  ev1,
-              "note": "In-place value patch preserves file length except for 12-hex swaps."
-          }
-          print(json.dumps(out, indent=2))
+          # Export the hash for the commit message using new outputs API
+          with open(Path.environ.get("GITHUB_OUTPUT", "/dev/stdout"), "a") as out:
+              out.write(f"hash={comp}\n")
 
-          # Export values for commit step
-          print(f"::set-output name=hash::{comp}")
+          if not ok1:
+              print("::error title=Re-verification failed::File did not pass after header/tag update.")
+              sys.exit(2)
           PY
 
       - name: Commit & push the synchronized header/tag
-        # Push only when we can write to the branch (not forks)
         if: >
           github.event_name == 'push' ||
           (github.event_name == 'pull_request' &&
@@ -136,13 +120,13 @@ jobs:
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add fusioncalc.py
-            git commit -m "CI: sync BUILD_HASH/BUILD_TAG to ${{ steps.sync.outputs.hash }} (in-place patch)"
+            git commit -m "CI: sync BUILD_HASH/BUILD_TAG to ${{ steps.sync.outputs.hash }} (byte-safe)"
             git push
           else
             echo "No changes to commit."
           fi
 
-      - name: Final verification (should be green now)
+      - name: Final verification (green if synced)
         shell: bash
         run: |
           set -euo pipefail
