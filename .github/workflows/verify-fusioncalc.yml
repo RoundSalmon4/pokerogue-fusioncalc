@@ -22,87 +22,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Configure Git (ensure no CRLF conversion)
+      # Ensure the runner won't do any CRLF conversion and won't error on "unsafe" EOL
+      - name: Configure Git line endings (LF, no autocrlf)
+        shell: bash
         run: |
+          set -euo pipefail
           git config --global core.autocrlf false
           git config --global core.eol lf
-          git config --global safecrlf false
+          git config --global core.safecrlf false
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Print environment (debug)
-        shell: bash
-        run: |
-          echo "Commit: $(git rev-parse HEAD)"
-          echo "Python:"
-          python -V
-          echo "Git core.autocrlf: $(git config --get core.autocrlf || echo unset)"
-          echo "Git core.eol: $(git config --get core.eol || echo unset)"
-
-      - name: Debug canonical hash (what CI sees)
+      # (Optional) quick byte info to help diagnose if needed; safe to remove
+      - name: Debug bytes (optional)
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import re, hashlib, json, sys, importlib.util, pathlib
-
-          PATH = pathlib.Path("fusioncalc.py")
-
-          # Show basic byte info
-          raw = PATH.read_bytes()
+          import pathlib, json
+          p = pathlib.Path('fusioncalc.py')
+          b = p.read_bytes()
           print(json.dumps({
-            "size_bytes": len(raw),
-            "endswith_newline": raw.endswith(b"\n"),
-            "last_16_bytes_hex": raw[-16:].hex() if len(raw)>=16 else raw.hex(),
-          }, indent=2))
-
-          # Extract header hash from first line (if present)
-          text = raw.decode("utf-8")
-          HEADER_RE   = re.compile(r'^\s*#\s*BUILD_HASH:\s*([0-9a-fA-F]{12})\s*$')
-          BUILDTAG_RE = re.compile(r'^\s*BUILD_TAG\s*=\s*([\"\\\'])\s*([^\"\\\']*)\s*\1\s*$')
-
-          lines = text.replace('\r\n','\n').replace('\r','\n').split('\n')
-          header = None
-          if lines and HEADER_RE.match(lines[0]):
-            header = HEADER_RE.match(lines[0]).group(1).lower()
-
-          print("header (from file):", header)
-
-          # --- Compute with your REPO verifier (import it) ---
-          spec = importlib.util.spec_from_file_location("fusioncalc_verify", "fusioncalc_verify.py")
-          mod = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(mod)  # type: ignore
-          ok_repo, ev_repo = mod.verify("fusioncalc.py")  # uses repo canonicalize/compute
-          print("computed (repo code):", ev_repo["computed_hash"])
-
-          # --- Compute with a STABLE EOF (exactly one final NL) for comparison ---
-          def canonicalize_stable(text: str):
-            s = text.replace('\r\n','\n').replace('\r','\n')
-            L = s.split('\n')
-            if L and HEADER_RE.match(L[0]):
-              L = L[1:]
-            for i, ln in enumerate(L):
-              if BUILDTAG_RE.match(ln):
-                L[i] = 'BUILD_TAG = ""'
-                break
-            # minimal, stable EOF rule
-            canon = '\n'.join(L).rstrip('\n') + '\n'
-            return canon
-
-          canon_stable = canonicalize_stable(text)
-          computed_stable = hashlib.sha256(canon_stable.encode('utf-8')).hexdigest()[:12]
-          print("computed (stable EOF):", computed_stable)
-
-          # Emit a compact summary for quick scan
-          print(json.dumps({
-            "header": header,
-            "computed_repo": ev_repo["computed_hash"],
-            "computed_stable_eof": computed_stable
+            "size_bytes": len(b),
+            "endswith_newline": b.endswith(b"\n"),
+            "last_16_bytes_hex": b[-16:].hex() if len(b) >= 16 else b.hex(),
           }, indent=2))
           PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
       - name: Verify BUILD_HASH / BUILD_TAG / AST (repo script)
         shell: bash
