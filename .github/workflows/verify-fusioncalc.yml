@@ -1,22 +1,27 @@
-name: Verify FusionCalc (SVH v1)
+name: Verify fusioncalc.py
 
 on:
   push:
-    branches: [ main, master ]
     paths:
       - 'fusioncalc.py'
-      - 'ci/svh_ci_verify.py'
       - '.github/workflows/verify-fusioncalc.yml'
+      - '.github/actions/fusioncalc-verify/**'
   pull_request:
-    branches: [ main, master ]
     paths:
       - 'fusioncalc.py'
+      - '.github/workflows/verify-fusioncalc.yml'
+      - '.github/actions/fusioncalc-verify/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  svh-verify:
+  verify:
+    name: Run fusioncalc verifier
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -24,5 +29,7 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: SVH v1 verification (production: fusioncalc.py)
-        run: python ci/svh_ci_verify.py
+      - name: Run verifier
+        shell: bash
+        run: |
+          python .github/actions/fusioncalc-verify/fusioncalc_verify.py fusioncalc.py
