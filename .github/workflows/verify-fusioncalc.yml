@@ -1,5 +1,8 @@
 name: Verify fusioncalc.py
 
+# Optional: this is the run name you see in the Actions list / Check Suite
+run-name: "fusioncalc verification – ${{ github.event_name }} #${{ github.run_number }}"
+
 on:
   push:
     paths:
@@ -16,11 +19,11 @@ permissions:
 
 jobs:
   verify:
-    name: Run fusioncalc verifier
+    name: fusioncalc verifier
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -28,16 +31,16 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Verify fusioncalc.py (inline)
+      # You will see this step name (not a file path) in the UI
+      - name: Verify BUILD_HASH / BUILD_TAG / AST
         shell: bash
         run: |
           set -euo pipefail
 
-          # Create a temporary verifier script
-          cat > "$RUNNER_TEMP/fusioncalc_verify.py" << 'PYCODE'
-          #!/usr/bin/env python3
+          # Inline Python via heredoc so nothing depends on repo paths
+          python - <<'PYCODE'
           from __future__ import annotations
-          import sys, re, json, hashlib, ast, time
+          import sys, re, json, hashlib, ast, time, io
 
           HEADER_RE   = re.compile(r'^\s*#\s*BUILD_HASH:\s*([0-9a-fA-F]{12})\s*$')
           BUILDTAG_RE = re.compile(r'^\s*BUILD_TAG\s*=\s*([\"\\\'])\s*([^\"\\\']*)\s*\1\s*$')
@@ -105,16 +108,11 @@ jobs:
                   'svh_version': 'SVH v1'
               }
 
-          def main(argv):
-              path = argv[1] if len(argv) > 1 else 'fusioncalc.py'
-              ok, ev = verify(path)
-              print(json.dumps({'ok': ok, 'evidence': ev}, indent=2))
-              return 0 if ok else 2
-
-          if __name__ == '__main__':
-              raise SystemExit(main(sys.argv))
+          path = 'fusioncalc.py'
+          ok, ev = verify(path)
+          print(json.dumps({'ok': ok, 'evidence': ev}, indent=2))
+          if not ok:
+              # Emit an annotation to make the failure obvious in the UI
+              print(f"::error title=Verification failed::Expected hash {ev['computed_hash']} (12-hex). Check header/build tag/AST.")
+              raise SystemExit(2)
           PYCODE
-
-          chmod +x "$RUNNER_TEMP/fusioncalc_verify.py"
-          python "$RUNNER_TEMP/fusioncalc_verify.py" fusioncalc.py
-``
