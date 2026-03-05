@@ -1,4 +1,4 @@
-# BUILD_HASH: ab16c29d0809
+# BUILD_HASH: 21d5c9f98d20
 
 
 import tkinter as tk
@@ -123,7 +123,31 @@ def on_toggle_verbose_logs():
 
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
 AUTO_RECALC_ON_SELECT = False
-BUILD_TAG = "ab16c29d0809"
+BUILD_TAG = "21d5c9f98d20"
+HAS_FUSION = False
+
+_FUSION_CACHE = {}
+__fusion_option_buttons__ = []  # runtime registry for Display Options fusion-column controls
+def update_fusion_option_states():
+    """Enable fusion panel toggles only after a fusion has occurred; disable after Clear. Idempotent.
+    This is a lightweight UI guard (Rule 58 + request 2a/conditions reset)."""
+    try:
+        desired_enabled = bool(globals().get('HAS_FUSION', False))
+        for btn in list(__fusion_option_buttons__):
+            try:
+                if desired_enabled:
+                    btn.state(['!disabled'])
+                else:
+                    btn.state(['disabled'])
+            except Exception:
+                try:
+                    import tkinter as tk
+                    btn['state'] = tk.NORMAL if desired_enabled else tk.DISABLED
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 # Fonts
 HEADING_FONT_DEF = ("Arial", 11, "bold")   # headings
 BODY_FONT_DEF    = ("Arial", 10)            # non-numeric body
@@ -664,11 +688,11 @@ def calculate_fusion_stats(p1, p2):
 
             if is_section_enabled('fusion', 'abilities'):
                 fusion_info.insert(tk.END, STR['abilities'] + ': ', 'strong_label'); fusion_info.insert(tk.END, f"{', '.join(visible_abilities)}\n")
-                if active_ability:
+                if is_section_enabled('fusion','abilities') and active_ability:
                     fusion_info.insert(tk.END, STR['active_ability'], 'strong_label'); fusion_info.insert(tk.END, f"{active_ability}\n")
-                if hidden_ability and active_ability == hidden_ability:
+                if is_section_enabled('fusion','abilities') and hidden_ability and active_ability == hidden_ability:
                     fusion_info.insert(tk.END, STR['hidden_ability_label'], 'strong_label'); fusion_info.insert(tk.END, f"{hidden_ability}\n")
-                if passive_ability and passive_on:
+                if is_section_enabled('fusion','abilities') and passive_ability and passive_on:
                     fusion_info.insert(tk.END, STR['passive_from_p1'], 'strong_label'); fusion_info.insert(tk.END, f"{passive_ability} (active)\n")
 
             if is_section_enabled('fusion', 'bst'):
@@ -744,7 +768,25 @@ def calculate_fusion_stats(p1, p2):
             _assert_and_raise_core_tags(fusion_info)
 
             dt_ms = (time.perf_counter() - t0) * 1000.0
-            status_text.set(f"Fused Type: {fused_type} Active: {active_ability or '—'} Passive: {'ON' if passive_on else 'OFF'} Flip: {'ON' if flip_stat_var.get() else 'OFF'} Calc: {dt_ms:.1f} ms")
+            global _FUSION_CACHE
+            _FUSION_CACHE = {'p1': p1, 'p2': p2, 'fused_type1': fused_type1, 'fused_type2': fused_type2, 'fusion_stats': fusion_stats, 'fused_bst': fused_bst, 'active_ability': active_ability, 'passive_ability': passive_ability, 'passive_on': passive_on, 'flip_on': bool(flip_stat_var.get()), 'inverse_on': bool(inverse_battle_var.get())}
+
+            global HAS_FUSION
+
+            HAS_FUSION = True
+            try:
+                _v = bool('verbose_logs_var' in globals() and verbose_logs_var.get())
+                if _v:
+                    log_calc(f"[Cache] stored (p1={p1}, p2={p2}, type={fused_type}, active={active_ability or '-'}, passive={'ON' if passive_on else 'OFF'}, flip={'ON' if flip_stat_var.get() else 'OFF'}, inv={'ON' if inverse_battle_var.get() else 'OFF'})")
+                else:
+                    log_calc(f"[Cache] stored (p1={p1}, p2={p2}, type={fused_type})")
+            except Exception:
+                pass
+            try:
+                update_fusion_option_states()
+            except Exception:
+                pass
+            status_text.set(f"Fused Type: {fused_type} Active: {active_ability or '—'} Passive: {'ON' if passive_on else 'OFF'} Flip: {'ON' if flip_stat_var.get() else 'OFF'} Inv: {'ON' if inverse_battle_var.get() else 'OFF'} Calc: {dt_ms:.1f} ms")
 
             try:
                 try:
@@ -840,10 +882,158 @@ def filter_pokemon(event, filter_var, pokemon_entry, filtered_listbox):
 
 # Display Options dialog
 
+
+def render_fusion_from(p1, p2, fused_type1, fused_type2, fusion_stats, fused_bst,
+                        active_ability, passive_ability, passive_on, debug=False):
+    """Re-render Fusion pane from cached values (no stat/type recompute).
+    Safe to call headless; computes only display-time effects (ability/type chart).
+    """
+    try:
+        fused_type = fused_type1 if (not fused_type2 or fused_type2 == fused_type1) else f"{fused_type1}/{fused_type2}"
+        try:
+            _v = bool('verbose_logs_var' in globals() and verbose_logs_var.get())
+            if _v:
+                log_calc(f"[Cache] render_from_cache (p1={p1}, p2={p2}, type={fused_type}, active={active_ability or '-'}, passive={'ON' if passive_on else 'OFF'}, flip={'ON' if flip_stat_var.get() else 'OFF'}, inv={'ON' if inverse_battle_var.get() else 'OFF'})")
+            else:
+                log_calc(f"[Cache] render_from_cache (p1={p1}, p2={p2}, type={fused_type})")
+        except Exception:
+            pass
+        fusion_info.delete('1.0', tk.END)
+        try:
+            fusion_info.configure(font=BODY_FONT_DEF)
+        except Exception:
+            pass
+        _assert_and_raise_core_tags(fusion_info)
+        if is_section_enabled('fusion', 'fused_type'):
+            fusion_info.insert(tk.END, STR['fused_type_label'], 'strong_label'); fusion_info.insert(tk.END, f"{fused_type}\n\n")
+        # Abilities / selections
+        abilities = list(dict.fromkeys(pokemon_stats.get(p2, {}).get('Abilities', [])))
+        visible_abilities = [a for i,a in enumerate(abilities) if i!=1] if abilities else []
+        active_ability_eff = (active_ability or (abilities[0] if abilities else '')).strip()
+        hidden_ability = abilities[1] if len(abilities) > 1 else ''
+        if is_section_enabled('fusion', 'abilities'):
+            fusion_info.insert(tk.END, STR['abilities'] + ': ', 'strong_label'); fusion_info.insert(tk.END, f"{', '.join(visible_abilities)}\n")
+        if is_section_enabled('fusion','abilities') and active_ability_eff:
+            fusion_info.insert(tk.END, STR['active_ability'], 'strong_label'); fusion_info.insert(tk.END, f"{active_ability_eff}\n")
+        if is_section_enabled('fusion','abilities') and hidden_ability and active_ability_eff == hidden_ability:
+            fusion_info.insert(tk.END, STR['hidden_ability_label'], 'strong_label'); fusion_info.insert(tk.END, f"{hidden_ability}\n")
+        if is_section_enabled('fusion','abilities') and passive_ability and passive_on:
+            fusion_info.insert(tk.END, STR['passive_from_p1'], 'strong_label'); fusion_info.insert(tk.END, f"{passive_ability} (active)\n")
+        if is_section_enabled('fusion', 'bst'):
+            fusion_info.insert(tk.END, "\n"); fusion_info.insert(tk.END, STR['bst_label'], 'strong_label'); fusion_info.insert(tk.END, "\n")
+            insert_hr(fusion_info)
+            items_dict = flip_stats_dict(fusion_stats) if flip_stat_var.get() else fusion_stats
+            items = [('HP', items_dict['HP']), ('Attack', items_dict['Attack']), ('Defense', items_dict['Defense']), ('Sp. Atk', items_dict['Sp. Atk']), ('Sp. Def', items_dict['Sp. Def']), ('Speed', items_dict['Speed'])]
+            write_stat_block(fusion_info, items)
+            fusion_info.insert(tk.END, "\n")
+            fusion_info.insert(tk.END, f"{STR['total_bst']}:\t", 'stat_label'); fusion_info.insert(tk.END, f"{format_number_trim(fused_bst)}\n", 'stat_value')
+        if is_section_enabled('fusion', 'diffs'):
+            try:
+                diff1 = float(fused_bst) - float(pokemon_stats.get(p1, {}).get('BST', 0))
+                diff2 = float(fused_bst) - float(pokemon_stats.get(p2, {}).get('BST', 0))
+            except Exception:
+                diff1 = fused_bst; diff2 = fused_bst
+            fusion_info.insert(tk.END, STR['difference_from'].format(p1)); fusion_info.insert(tk.END, f"{format_number_trim(diff1)}\n", 'stat_value')
+            fusion_info.insert(tk.END, STR['difference_from'].format(p2)); fusion_info.insert(tk.END, f"{format_number_trim(diff2)}\n\n", 'stat_value')
+        # Ability effect summary
+        def _ability_effect_summary_line(label: str, ability_name: str):
+            abil = (ability_name or '').strip().upper(); eff = ABILITY_EFFECTS.get(abil, {}); parts = []
+            if eff.get('immunities'): parts.append(f"immunities: {', '.join(eff['immunities'])}")
+            if eff.get('halve'): parts.append(f"halves: {', '.join(eff['halve'])}")
+            if abil == 'WONDER GUARD': parts.append('wonder guard: immune to all non-super-effective')
+            if not parts: parts.append('no type-chart effects')
+            return f"{label}: " + '; '.join(parts)
+        if is_section_enabled('fusion', 'ability_effects'):
+            ae = _ability_effect_summary_line(STR['active_effect'], active_ability_eff)
+            if active_ability_eff and 'no type-chart effects' not in ae: fusion_info.insert(tk.END, ae + '\n')
+            pe = _ability_effect_summary_line(STR['passive_effect'], (passive_ability if passive_on else ''))
+            if passive_ability and passive_on and 'no type-chart effects' not in pe: fusion_info.insert(tk.END, pe + '\n')
+            fusion_info.insert(tk.END, '\n')
+        # Quick Compare
+        if is_section_enabled('fusion', 'quick_compare'):
+            try:
+                target_key = quick_compare_target_var.get() if 'quick_compare_target_var' in globals() else 'p2'
+                if target_key == 'p1':
+                    bt1, bt2, target_name = pokemon_stats.get(p1, {}).get('Type_1',''), pokemon_stats.get(p1, {}).get('Type_2',''), p1
+                else:
+                    bt1, bt2, target_name = pokemon_stats.get(p2, {}).get('Type_1',''), pokemon_stats.get(p2, {}).get('Type_2',''), p2
+                eff_fused_raw = calculate_type_effectiveness(fused_type1, fused_type2, active_ability=active_ability_eff, passive_ability=(passive_ability if passive_on else None))
+                eff_base_raw = calculate_type_effectiveness(bt1, bt2, active_ability=None, passive_ability=None)
+                def group_effects(eff):
+                    groups = {0.0:set(), 0.25:set(), 0.5:set(), 1.0:set(), 2.0:set(), 4.0:set()}
+                    for t,v in eff.items():
+                        if v <= 0.0: groups[0.0].add(t)
+                        elif v <= 0.25: groups[0.25].add(t)
+                        elif v <= 0.5: groups[0.5].add(t)
+                        elif v >= 4.0: groups[4.0].add(t)
+                        elif v >= 2.0: groups[2.0].add(t)
+                        else: groups[1.0].add(t)
+                    return groups
+                gf = group_effects(eff_fused_raw); gb = group_effects(eff_base_raw)
+                new_imm = sorted(gf[0.0] - gb[0.0]); lost_imm = sorted(gb[0.0] - gf[0.0])
+                new_wk = sorted((gf[2.0] | gf[4.0]) - (gb[2.0] | gb[4.0]))
+                lost_wk = sorted((gb[2.0] | gb[4.0]) - (gf[2.0] | gf[4.0]))
+                new_res = sorted((gf[0.25] | gf[0.5]) - (gb[0.25] | gb[0.5]))
+                lost_res= sorted((gb[0.25] | gb[0.5]) - (gf[0.25] | gf[0.5]))
+                fusion_info.insert(tk.END, f"Quick Compare vs {target_name}: ", 'strong_label'); fusion_info.insert(tk.END, "\n")
+                if new_imm: fusion_info.insert(tk.END, STR['new_imm'] + f"{', '.join(new_imm)}\n")
+                if lost_imm: fusion_info.insert(tk.END, STR['lost_imm'] + f"{', '.join(lost_imm)}\n")
+                if new_wk: fusion_info.insert(tk.END, STR['new_wk'] + f"{', '.join(new_wk)}\n")
+                if lost_wk: fusion_info.insert(tk.END, STR['lost_wk']+ f"{', '.join(lost_wk)}\n")
+                if new_res: fusion_info.insert(tk.END, STR['new_res'] + f"{', '.join(new_res)}\n")
+                if lost_res:fusion_info.insert(tk.END, STR['lost_res']+ f"{', '.join(lost_res)}\n")
+                if not (new_imm or lost_imm or new_wk or lost_wk or new_res or lost_res): fusion_info.insert(tk.END, STR['no_changes'] + "\n")
+                fusion_info.insert(tk.END, "\n")
+            except Exception as _e:
+                logging.debug(f"[QuickCompare] cache-render error: {_e}")
+        # Damage taken
+        if is_section_enabled('fusion', 'damage'):
+            eff = calculate_type_effectiveness(fused_type1, fused_type2, active_ability=active_ability_eff, passive_ability=(passive_ability if passive_on else None))
+            fusion_info.insert(tk.END, STR['damage_taken'] + ': ', 'strong_label'); fusion_info.insert(tk.END, "\n\n")
+            _eff_str = format_type_effectiveness(eff); _eff_body = _eff_str.split('\n',1)[1] if '\n' in _eff_str else ''
+            fusion_info.insert(tk.END, _eff_body)
+        _assert_and_raise_core_tags(fusion_info)
+        try:
+            status_text.set(f"Fused Type: {fused_type} Active: {active_ability_eff or '—'} Passive: {'ON' if passive_on else 'OFF'} Flip: {'ON' if flip_stat_var.get() else 'OFF'} Inv: {'ON' if inverse_battle_var.get() else 'OFF'} CacheRefresh: OK")
+        except Exception:
+            pass
+    except Exception as e:
+        logging.debug(f"[CacheRender] failed: {e}")
+
+
+def refresh_after_challenge_toggle():
+    try:
+        refresh_side_panels()
+        if globals().get('HAS_FUSION', False) and isinstance(globals().get('_FUSION_CACHE', {}), dict):
+            c = globals().get('_FUSION_CACHE', {})
+            req = ['p1','p2','fused_type1','fused_type2','fusion_stats','fused_bst','active_ability','passive_ability','passive_on']
+            if all(k in c for k in req):
+                try:
+                    _v = bool('verbose_logs_var' in globals() and verbose_logs_var.get())
+                    if _v:
+                        log_calc(f"[Cache] refresh_via_challenge_toggle (flip={'ON' if flip_stat_var.get() else 'OFF'}, inv={'ON' if inverse_battle_var.get() else 'OFF'})")
+                    else:
+                        log_calc('[Cache] refresh_via_challenge_toggle')
+                except Exception:
+                    pass
+                try:
+                    _v = bool('verbose_logs_var' in globals() and verbose_logs_var.get())
+                    if _v:
+                        log_calc(f"[Cache] refresh_via_display_options (flip={'ON' if flip_stat_var.get() else 'OFF'}, inv={'ON' if inverse_battle_var.get() else 'OFF'})")
+                    else:
+                        log_calc('[Cache] refresh_via_display_options')
+                except Exception:
+                    pass
+                render_fusion_from(c['p1'], c['p2'], c['fused_type1'], c['fused_type2'], c['fusion_stats'], c['fused_bst'], c['active_ability'], c['passive_ability'], c['passive_on'])
+    except Exception:
+        pass
+
 def show_display_options():
     ensure_display_vars()
-    global quick_compare_target_var
+    global quick_compare_target_var, __fusion_option_buttons__
     if quick_compare_target_var is None: quick_compare_target_var = tk.StringVar(value='p2')
+    try: __fusion_option_buttons__.clear()
+    except Exception: pass
     try:
         for w in root.winfo_children():
             if isinstance(w, tk.Toplevel) and str(w.title()) == STR['display_options_title']:
@@ -857,11 +1047,21 @@ def show_display_options():
     def cb_refresh():
         try:
             _assert_and_raise_core_tags(pokemon1_info); _assert_and_raise_core_tags(pokemon2_info); _assert_and_raise_core_tags(fusion_info)
-        except Exception: pass
+        except Exception:
+            pass
         try:
-            refresh_side_panels(); force_recalc_if_ready(); _assert_and_raise_core_tags(pokemon1_info); _assert_and_raise_core_tags(pokemon2_info); _assert_and_raise_core_tags(fusion_info)
+            # Always refresh side panels (they compute their own displays)
+            refresh_side_panels()
+            # Cache-backed Fusion refresh (no recalculation even if challenge toggles changed)
+            if globals().get('HAS_FUSION', False) and isinstance(globals().get('_FUSION_CACHE', {}), dict):
+                c = globals().get('_FUSION_CACHE', {})
+                req = ['p1','p2','fused_type1','fused_type2','fusion_stats','fused_bst','active_ability','passive_ability','passive_on']
+                if all(k in c for k in req):
+                    render_fusion_from(c['p1'], c['p2'], c['fused_type1'], c['fused_type2'], c['fusion_stats'], c['fused_bst'], c['active_ability'], c['passive_ability'], c['passive_on'])
+            _assert_and_raise_core_tags(pokemon1_info); _assert_and_raise_core_tags(pokemon2_info); _assert_and_raise_core_tags(fusion_info)
         except Exception as e:
             logging.debug(f"[DisplayOptions] refresh error: {e}")
+
 
     hdrs = [STR['section'], STR['p1'], STR['fusion'], STR['p2']]
     for i, h in enumerate(hdrs): ttk.Label(dlg, text=h, font=('Arial', 10, 'bold')).grid(row=0, column=i, padx=8, pady=6)
@@ -883,7 +1083,13 @@ def show_display_options():
         ttk.Label(dlg, text=label).grid(row=r, column=0, sticky='w', padx=8, pady=2)
         if k1: ttk.Checkbutton(dlg, variable=display_vars['p1'][k1], command=cb_refresh).grid(row=r, column=1)
         else: ttk.Label(dlg, text='—').grid(row=r, column=1)
-        if kf: ttk.Checkbutton(dlg, variable=display_vars['fusion'][kf], command=cb_refresh).grid(row=r, column=2)
+        if kf:
+            _btn = ttk.Checkbutton(dlg, variable=display_vars['fusion'][kf], command=cb_refresh)
+            _btn.grid(row=r, column=2)
+            try:
+                __fusion_option_buttons__.append(_btn)
+            except Exception:
+                pass
         else: ttk.Label(dlg, text='—').grid(row=r, column=2)
         if k2: ttk.Checkbutton(dlg, variable=display_vars['p2'][k2], command=cb_refresh).grid(row=r, column=3)
         else: ttk.Label(dlg, text='—').grid(row=r, column=3)
@@ -917,7 +1123,15 @@ def show_display_options():
     ttk.Button(btns, text=STR['select_all'], command=do_select_all).pack(side=tk.LEFT, padx=5)
     ttk.Button(btns, text=STR['select_none'], command=do_select_none).pack(side=tk.LEFT, padx=5)
     ttk.Button(btns, text=STR['restore_defaults'], command=do_restore_defaults).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btns, text=STR['close'], command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(btns, text=STR['close'], command=lambda: (dlg.withdraw(), dlg.after(0, dlg.destroy))).pack(side=tk.RIGHT, padx=5)
+    try:
+        update_fusion_option_states()
+    except Exception:
+        pass
+    try:
+        cb_refresh()
+    except Exception:
+        pass
 # Type effectiveness
 type_effectiveness = {
     'Normal':  {'weaknesses': ['Fighting'], 'resistances': [], 'immunities': ['Ghost']},
@@ -944,32 +1158,66 @@ def _normalize_ability(name: str) -> str:
     return (name or '').strip().upper()
 
 def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive_ability=None):
-    effectiveness = {t: 1.0 for t in type_effectiveness.keys()}
-    types = [type1.title()]
-    if type2 and type2.title() != type1.title(): types.append(type2.title())
+    # Compute base chart first (no abilities)
+    base = {t: 1.0 for t in type_effectiveness.keys()}
+    types = [type1.title()] if type1 else []
+    if type2 and type2.title() != (type1.title() if type1 else ''):
+        types.append(type2.title())
     for t in types:
         if t not in type_effectiveness:
             logging.error(f"Unknown type: {t}")
             continue
-        for weakness in type_effectiveness[t]['weaknesses']: effectiveness[weakness] *= 2
-        for resistance in type_effectiveness[t]['resistances']: effectiveness[resistance] *= 0.5
-        for immunity in type_effectiveness[t]['immunities']: effectiveness[immunity] = 0
+        for weakness in type_effectiveness[t]['weaknesses']:
+            base[weakness] *= 2
+        for resistance in type_effectiveness[t]['resistances']:
+            base[resistance] *= 0.5
+        for immunity in type_effectiveness[t]['immunities']:
+            base[immunity] = 0
+    # Apply Inverse Battle inversion to the base chart if toggled
+    eff = dict(base)
+    try:
+        inv_on = bool(inverse_battle_var.get())
+    except Exception:
+        inv_on = False
+    if inv_on:
+        for k, v in list(eff.items()):
+            if v <= 0.0:
+                eff[k] = 2.0
+            elif v <= 0.25 + 1e-9:
+                eff[k] = 4.0
+            elif v <= 0.5 + 1e-9:
+                eff[k] = 2.0
+            elif v >= 4.0 - 1e-9:
+                eff[k] = 0.25
+            elif v >= 2.0 - 1e-9:
+                eff[k] = 0.5
+            else:
+                eff[k] = 1.0
+    # Abilities apply after inversion (ability immunities/resistances are unaffected by Inverse rules)
     act = _normalize_ability(active_ability); pas = _normalize_ability(passive_ability)
     def apply_effects(which):
-        eff = ABILITY_EFFECTS.get(which)
-        if not eff: return
-        for immu in eff.get('immunities', []):
-            if immu in effectiveness: effectiveness[immu] = 0
-        for half in eff.get('halve', []):
-            if half in effectiveness: effectiveness[half] *= 0.5
-        for mult_t, mult_v in eff.get('multiply', {}).items():
-            if mult_t in effectiveness: effectiveness[mult_t] *= float(mult_v)
-    if act: apply_effects(act)
-    if pas: apply_effects(pas)
+        e = ABILITY_EFFECTS.get(which)
+        if not e:
+            return
+        for immu in e.get('immunities', []):
+            if immu in eff:
+                eff[immu] = 0
+        for half in e.get('halve', []):
+            if half in eff:
+                eff[half] *= 0.5
+        for mult_t, mult_v in e.get('multiply', {}).items():
+            if mult_t in eff:
+                eff[mult_t] *= float(mult_v)
+    if act:
+        apply_effects(act)
+    if pas:
+        apply_effects(pas)
+    # Wonder Guard special-case (post all adjustments): immune to all non-super-effective
     if act == 'WONDER GUARD' or pas == 'WONDER GUARD':
-        for k, v in list(effectiveness.items()):
-            if v < 2: effectiveness[k] = 0
-    return effectiveness
+        for k, v in list(eff.items()):
+            if v < 2:
+                eff[k] = 0
+    return eff
 
 def format_type_effectiveness(effectiveness):
     result = STR['damage_taken'] + "\n"
@@ -1009,6 +1257,31 @@ resources_menu.add_command(label='Type Calculator', command=open_type_calculator
 resources_menu.add_command(label='PokeRogue Pokedex', command=open_pokedex)
 help_menu = tk.Menu(menubar, tearoff=0); menubar.add_cascade(label='Help', menu=help_menu)
 
+# Toolbar Integrity Guard — ensure required challenge labels exist (idempotent)
+def _verify_challenges_menu_integrity():
+    try:
+        required = ['Flip Stat Challenge', 'Inverse Battle Challenge']
+        present = []
+        try:
+            count = challenges_menu.index('end') or -1
+        except Exception:
+            count = -1
+        if count >= 0:
+            for i in range(count + 1):
+                try:
+                    lbl = challenges_menu.entrycget(i, 'label')
+                    if lbl:
+                        present.append(lbl)
+                except Exception:
+                    pass
+        if 'Flip Stat Challenge' not in present:
+            challenges_menu.add_checkbutton(label='Flip Stat Challenge', variable=flip_stat_var, onvalue=True, offvalue=False, command=refresh_after_challenge_toggle)
+        if 'Inverse Battle Challenge' not in present:
+            challenges_menu.add_checkbutton(label='Inverse Battle Challenge', variable=inverse_battle_var, onvalue=True, offvalue=False, command=refresh_after_challenge_toggle)
+    except Exception as e:
+        logging.debug(f'[ToolbarGuard] Challenges menu audit failed: {e}')
+
+
 # View menu
 view_menu = tk.Menu(menubar, tearoff=0); menubar.add_cascade(label='View', menu=view_menu)
 logs_master_var = tk.BooleanVar(value=True)
@@ -1031,6 +1304,7 @@ quick_compare_target_var = tk.StringVar(value='p2')
 passive_active_var = tk.BooleanVar(value=True)
 flip_stat_var = tk.BooleanVar(value=False)
 
+inverse_battle_var = tk.BooleanVar(value=False)
 # Display vars
 display_vars = init_display_vars()
 
@@ -1091,7 +1365,16 @@ view_menu.add_checkbutton(label='Show Status Bar', variable=show_status_bar_var,
 on_toggle_master_logs()
 
 # Challenges — Flip Stat
-challenges_menu.add_checkbutton(label='Flip Stat Challenge', variable=flip_stat_var, onvalue=True, offvalue=False, command=lambda: (refresh_side_panels(), force_recalc_if_ready()))
+challenges_menu.add_checkbutton(label='Flip Stat Challenge', variable=flip_stat_var, onvalue=True, offvalue=False, command=refresh_after_challenge_toggle)
+
+# Challenges — Inverse Battle
+challenges_menu.add_checkbutton(label='Inverse Battle Challenge', variable=inverse_battle_var, onvalue=True, offvalue=False, command=refresh_after_challenge_toggle)
+# One-shot toolbar integrity verification (idempotent)
+try:
+    _verify_challenges_menu_integrity()
+except Exception:
+    pass
+
 
 # Main layout
 main_frame = ttk.Frame(root); main_frame.pack(fill=tk.BOTH, expand=True, padx=10)
@@ -1113,6 +1396,12 @@ swap_button = ttk.Button(button_frame, text='Swap', command=swap_pokemon)
 swap_button.pack(side=tk.LEFT, padx=5)
 
 def clear_selections():
+    global HAS_FUSION
+    HAS_FUSION = False
+    try:
+        update_fusion_option_states()
+    except Exception:
+        pass
     pokemon1_var.set(''); pokemon2_var.set(''); pokemon1_filter_var.set(''); pokemon2_filter_var.set('')
     pokemon1_filtered_listbox.selection_clear(0, tk.END); pokemon2_filtered_listbox.selection_clear(0, tk.END)
     pokemon1_name.config(text=''); pokemon2_name.config(text='')
@@ -1215,6 +1504,8 @@ root.bind_all('<Control-Shift-D>', lambda e: show_display_options())
 
 def force_recalc_if_ready():
     try:
+        if not (globals().get('HAS_FUSION', False)):
+            return
         p1 = pokemon1_var.get().strip() if 'pokemon1_var' in globals() else ''
         p2 = pokemon2_var.get().strip() if 'pokemon2_var' in globals() else ''
         if p1 in pokemon_stats and p2 in pokemon_stats: calculate_fusion_stats(p1, p2)
