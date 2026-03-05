@@ -30,16 +30,11 @@ This calculator mirrors the core mechanics described in the official PokéRogue 
 
 ## 🧬 Fusion Engine
 
-### Types
-Implements PokéRogue’s official fusion typing rules:
-- **Primary Type** → from Pokémon 1  
-- **Secondary Type** → from Pokémon 2  
-- Intelligent duplication handling for mono/dual‑type edge cases  
-- Fully matches Fusion Mechanics definitions from the official wiki
+- Implements PokéRogue’s official fusion typing rules
 
 ### Stats
 - All six base stats are **independently averaged**
-- Total BST calculated live
+- Total BST calculated
 - Differences vs both source Pokémon
 
 ### Abilities
@@ -60,16 +55,6 @@ Includes:
   - Multipliers (e.g., **Dry Skin → Fire ×1.25**)  
   - Wonder Guard special rule (immune to all non‑super‑effective)
 
-### Output presentation
-- Clean grouped format:
-  - **Immune**
-  - **1/4×**
-  - **1/2×**
-  - **1×**
-  - **2×**
-  - **4×**
-- Additional non‑standard values (e.g., **0.62× Fire**) shown separately
-
 ---
 
 ## 🔄 Quick Compare (vs Pokémon 1 or Pokémon 2)
@@ -84,13 +69,9 @@ Shows exactly how the fused creature changes defensive profile:
 
 ---
 
-## 🌀 Flip Stat Challenge Mode
-Instantly flips stat mapping (HP↔Speed, Atk↔Sp.Def, Def↔Sp.Atk) for:
-- Pokémon 1  
-- Pokémon 2  
-- Fused Pokémon  
-
-Perfect for the **Flip Stat Challenge** mode.
+## 🌀 Challenge Mode Mappings
+- Flip Stat Challenge
+- Inverse Battle Challenge
 
 ---
 
@@ -117,7 +98,6 @@ Perfect for the **Flip Stat Challenge** mode.
 ---
 
 ## 📚 Resource Shortcuts
-Links open in browser:
 - Pokémon Database  
 - Type Calculator  
 - PokéRogue Pokédex  
