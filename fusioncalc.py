@@ -1,4 +1,4 @@
-# BUILD_HASH: 21d5c9f98d20
+# BUILD_HASH: 8f80b4b35fa2
 
 
 import tkinter as tk
@@ -123,7 +123,7 @@ def on_toggle_verbose_logs():
 
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
 AUTO_RECALC_ON_SELECT = False
-BUILD_TAG = "21d5c9f98d20"
+BUILD_TAG = "8f80b4b35fa2"
 HAS_FUSION = False
 
 _FUSION_CACHE = {}
@@ -1315,21 +1315,26 @@ def show_help_overview():
         "\nPokéRogue Fusion Calculator — Toolbar Overview\n"
         "\nFile\n  • " + STR['copy_fusion_summary'] + ": Copy the Fusion pane text.\n"
         "  • " + STR['export_fusion_summary'] + ": Save Fusion pane as .md/.txt.\n"
-        "\nView\n  • Display Options…: Toggle visibility of sections per panel (auto-applies).\n"
+        "\nView\n  • Display Options: Toggle visibility of sections per panel (auto-applies).\n"
         "  • Quick Compare: Show/hide comparison summary vs P1/P2.\n"
         "  • Compare vs: Choose the baseline used in Quick Compare.\n"
         "  • Passive Active: Toggle whether Pokémon 1's Passive affects fusion typing.\n"
-        "  • Verbose Logs: Enable diagnostic logging & allow calculation logs.\n"
+        "  • Logging (Master): Master switch; disables/enables all logging toggles.\n"
+        "  • Verbose Logs: Raise log level to DEBUG (more detail).\n"
+        "  • Show Calculation Logs: Emit calculation traces (respects Master/Verbose).\n"
+        "  • Show UI Layout Logs: Dump a one-shot layout/geometry report.\n"
+        "  • Show Widget Font/Tag Logs: Dump fonts/tags used by text widgets.\n"
         "  • Show Status Bar: Show/hide the bottom status strip.\n"
-        "  • Show Calculation Logs: Extra calc traces (Master + Show Calculation Logs ON; Verbose optional — enables more detail).\n"
         "\nChallenges\n  • Flip Stat Challenge: Swap stat roles (HP↔Speed, Atk↔Sp.Def, Def↔Sp.Atk).\n"
+        "  • Inverse Battle Challenge: Invert type chart (weaknesses/resistances swapped).\n"
         "\nResources\n  • Pokémon Database, Type Calculator, PokeRogue Pokedex (opens in browser).\n"
-        "\nTips\n  • Use Search Filters (Help → Search Filters…) to narrow lists quickly.\n"
+        "\nTips\n  • Use Search Filters (Help → Search Filters) to narrow lists quickly.\n"
     )
+
     try: messagebox.showinfo('Help — Toolbar Overview', help_text)
     except Exception: pass
 
-help_menu.add_command(label='Toolbar Overview…', command=show_help_overview)
+help_menu.add_command(label='Toolbar Overview', command=show_help_overview)
 
 def show_filter_help():
     try:
@@ -1346,10 +1351,10 @@ def show_filter_help():
     except Exception:
         pass
 
-help_menu.add_command(label='Search Filters…', command=show_filter_help)
+help_menu.add_command(label='Search Filters', command=show_filter_help)
 
 # Populate View menu
-view_menu.add_command(label='Display Options…', command=show_display_options, accelerator='Ctrl+Shift+D')
+view_menu.add_command(label='Display Options', command=show_display_options, accelerator='Ctrl+Shift+D')
 view_menu.add_separator()
 view_menu.add_checkbutton(label='Quick Compare', variable=display_vars['fusion']['quick_compare'], onvalue=True, offvalue=False, command=lambda: force_recalc_if_ready())
 cmp = tk.Menu(view_menu, tearoff=0)
