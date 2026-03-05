@@ -1,4 +1,4 @@
-# BUILD_HASH: 8f80b4b35fa2
+# BUILD_HASH: a7bc0c0cd707
 
 
 import tkinter as tk
@@ -123,7 +123,7 @@ def on_toggle_verbose_logs():
 
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
 AUTO_RECALC_ON_SELECT = False
-BUILD_TAG = "8f80b4b35fa2"
+BUILD_TAG = "a7bc0c0cd707"
 HAS_FUSION = False
 
 _FUSION_CACHE = {}
@@ -1158,65 +1158,95 @@ def _normalize_ability(name: str) -> str:
     return (name or '').strip().upper()
 
 def calculate_type_effectiveness(type1, type2=None, active_ability=None, passive_ability=None):
-    # Compute base chart first (no abilities)
-    base = {t: 1.0 for t in type_effectiveness.keys()}
-    types = [type1.title()] if type1 else []
-    if type2 and type2.title() != (type1.title() if type1 else ''):
-        types.append(type2.title())
-    for t in types:
-        if t not in type_effectiveness:
-            logging.error(f"Unknown type: {t}")
-            continue
-        for weakness in type_effectiveness[t]['weaknesses']:
-            base[weakness] *= 2
-        for resistance in type_effectiveness[t]['resistances']:
-            base[resistance] *= 0.5
-        for immunity in type_effectiveness[t]['immunities']:
-            base[immunity] = 0
-    # Apply Inverse Battle inversion to the base chart if toggled
-    eff = dict(base)
+    # Canonical per-type factoring with per-type inversion (Inverse Battle)
+    # Abilities are applied AFTER inversion; Wonder Guard handled last.
+    def _factor_vs_single(def_type: str) -> dict:
+        result = {t: 1.0 for t in type_effectiveness.keys()}
+        if not def_type:
+            return result
+        dt = def_type.title()
+        if dt not in type_effectiveness:
+            try:
+                import logging
+                logging.error(f"Unknown type: {dt}")
+            except Exception:
+                pass
+            return result
+        te = type_effectiveness[dt]
+        for w in te['weaknesses']:
+            result[w] *= 2.0
+        for r in te['resistances']:
+            result[r] *= 0.5
+        for im in te['immunities']:
+            result[im] = 0.0
+        return result
+
+    def _invert(v: float) -> float:
+        # Smogon Inverse mapping: 0→2, 1/4→4, 1/2→2, 1→1, 2→1/2, 4→1/4
+        eps = 1e-9
+        if v <= 0.0:
+            return 2.0
+        if v <= 0.25 + eps:
+            return 4.0
+        if v <= 0.5 + eps:
+            return 2.0
+        if v >= 4.0 - eps:
+            return 0.25
+        if v >= 2.0 - eps:
+            return 0.5
+        return 1.0
+
+    # Inverse toggle (safe if var not yet defined)
     try:
         inv_on = bool(inverse_battle_var.get())
     except Exception:
         inv_on = False
-    if inv_on:
-        for k, v in list(eff.items()):
-            if v <= 0.0:
-                eff[k] = 2.0
-            elif v <= 0.25 + 1e-9:
-                eff[k] = 4.0
-            elif v <= 0.5 + 1e-9:
-                eff[k] = 2.0
-            elif v >= 4.0 - 1e-9:
-                eff[k] = 0.25
-            elif v >= 2.0 - 1e-9:
-                eff[k] = 0.5
-            else:
-                eff[k] = 1.0
-    # Abilities apply after inversion (ability immunities/resistances are unaffected by Inverse rules)
+
+    t1 = (type1 or '').title()
+    t2 = (type2 or '').title()
+    f1 = _factor_vs_single(t1)
+    f2 = _factor_vs_single(t2) if (t2 and t2 != t1) else None
+
+    eff = {}
+    for atk in type_effectiveness.keys():
+        v1 = f1.get(atk, 1.0)
+        v2 = f2.get(atk, 1.0) if f2 else 1.0
+        if inv_on:
+            v1 = _invert(v1)
+            v2 = _invert(v2)
+        eff[atk] = v1 * v2
+
+    # Abilities apply after inversion (ability immunities/resistances unaffected by Inverse)
     act = _normalize_ability(active_ability); pas = _normalize_ability(passive_ability)
-    def apply_effects(which):
+
+    def apply_effects(which: str):
         e = ABILITY_EFFECTS.get(which)
         if not e:
             return
         for immu in e.get('immunities', []):
             if immu in eff:
-                eff[immu] = 0
+                eff[immu] = 0.0
         for half in e.get('halve', []):
             if half in eff:
                 eff[half] *= 0.5
         for mult_t, mult_v in e.get('multiply', {}).items():
             if mult_t in eff:
-                eff[mult_t] *= float(mult_v)
+                try:
+                    eff[mult_t] *= float(mult_v)
+                except Exception:
+                    pass
+
     if act:
         apply_effects(act)
     if pas:
         apply_effects(pas)
-    # Wonder Guard special-case (post all adjustments): immune to all non-super-effective
+
+    # Wonder Guard: immune to all non-super-effective (post all adjustments)
     if act == 'WONDER GUARD' or pas == 'WONDER GUARD':
         for k, v in list(eff.items()):
             if v < 2:
-                eff[k] = 0
+                eff[k] = 0.0
+
     return eff
 
 def format_type_effectiveness(effectiveness):
