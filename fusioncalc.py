@@ -1,4 +1,4 @@
-# BUILD_HASH: a7bc0c0cd707
+# BUILD_HASH: b80503f79561
 
 
 import tkinter as tk
@@ -123,7 +123,7 @@ def on_toggle_verbose_logs():
 
 VERBOSE_BOLD_LOGS = False  # runtime-controlled via View → Verbose Logs
 AUTO_RECALC_ON_SELECT = False
-BUILD_TAG = "a7bc0c0cd707"
+BUILD_TAG = "b80503f79561"
 HAS_FUSION = False
 
 _FUSION_CACHE = {}
@@ -1028,6 +1028,25 @@ def refresh_after_challenge_toggle():
     except Exception:
         pass
 
+
+
+def refresh_after_passive_toggle():
+    """Re-render fusion pane from cache using current Passive Active state; no recalculation.
+    Safe headless; idempotent.
+    """
+    try:
+        refresh_side_panels()
+        if globals().get('HAS_FUSION', False) and isinstance(globals().get('_FUSION_CACHE', {}), dict):
+            c = globals().get('_FUSION_CACHE', {})
+            req = ['p1','p2','fused_type1','fused_type2','fusion_stats','fused_bst','active_ability','passive_ability','passive_on']
+            if all(k in c for k in req):
+                try:
+                    passive_on_now = bool(passive_active_var.get())
+                except Exception:
+                    passive_on_now = c.get('passive_on', False)
+                render_fusion_from(c['p1'], c['p2'], c['fused_type1'], c['fused_type2'], c['fusion_stats'], c['fused_bst'], c['active_ability'], c['passive_ability'], passive_on_now)
+    except Exception:
+        pass
 def show_display_options():
     ensure_display_vars()
     global quick_compare_target_var, __fusion_option_buttons__
@@ -1386,13 +1405,13 @@ help_menu.add_command(label='Search Filters', command=show_filter_help)
 # Populate View menu
 view_menu.add_command(label='Display Options', command=show_display_options, accelerator='Ctrl+Shift+D')
 view_menu.add_separator()
-view_menu.add_checkbutton(label='Quick Compare', variable=display_vars['fusion']['quick_compare'], onvalue=True, offvalue=False, command=lambda: force_recalc_if_ready())
+view_menu.add_checkbutton(label='Quick Compare', variable=display_vars['fusion']['quick_compare'], onvalue=True, offvalue=False, command=refresh_after_passive_toggle)
 cmp = tk.Menu(view_menu, tearoff=0)
-cmp.add_radiobutton(label='Compare vs Pokémon 1', variable=quick_compare_target_var, value='p1', command=lambda: force_recalc_if_ready())
-cmp.add_radiobutton(label='Compare vs Pokémon 2', variable=quick_compare_target_var, value='p2', command=lambda: force_recalc_if_ready())
+cmp.add_radiobutton(label='Compare vs Pokémon 1', variable=quick_compare_target_var, value='p1', command=refresh_after_passive_toggle)
+cmp.add_radiobutton(label='Compare vs Pokémon 2', variable=quick_compare_target_var, value='p2', command=refresh_after_passive_toggle)
 view_menu.add_cascade(label='Compare vs', menu=cmp)
 view_menu.add_separator()
-view_menu.add_checkbutton(label='Passive Active', variable=passive_active_var, onvalue=True, offvalue=False, command=lambda: force_recalc_if_ready())
+view_menu.add_checkbutton(label='Passive Active', variable=passive_active_var, onvalue=True, offvalue=False, command=refresh_after_passive_toggle)
 view_menu.add_separator()
 # Status bar toggle wiring (normalized)
 view_menu.add_checkbutton(label='Show Status Bar', variable=show_status_bar_var, onvalue=True, offvalue=False, command=lambda: (status_bar.pack(side=tk.BOTTOM, fill=tk.X) if show_status_bar_var.get() else status_bar.pack_forget()))
